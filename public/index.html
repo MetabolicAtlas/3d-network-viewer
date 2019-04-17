@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+    <head lang='en'>
+        <meta charset="utf8">
+        <meta name='viewport' content='width=device-width'>
+        <link rel="icon" type="image/png" href="favicon.png">
+        <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
+        <script src="met-atlas-viewer.js"></script>
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+            .title {
+                position: fixed;
+                top: 0;
+                left: 0;
+                font-family: 'Courier New', Courier, monospace;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="viewer" class="atlas-viewer"></div>
+        <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
+        <script>
+            var viewer = MetAtlasViewer.createAt("viewer");
+        </script>
+    </body>
+</html>

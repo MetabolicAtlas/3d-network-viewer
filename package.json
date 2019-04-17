@@ -1,0 +1,42 @@
+{
+  "author": {
+    "name": "Martin Norling"
+  },
+  "bugs": {
+    "url": "https://github.com/SysBioChalmers/MetAtlas-MapViewer-3D/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "ThreeJS based graph viewer.",
+  "devDependencies": {
+    "rimraf": "^2.6.3",
+    "rollup": "^1.10.0",
+    "terser": "^3.17.0",
+    "serve": "^11.0.0",
+    "npm-run-all": "^4.1.5",
+    "rollup-plugin-node-resolve": "^4.2.3"
+  },
+  "dependencies": {
+    "three-js": "mrdoob/three.js#936b0a2"
+  },
+  "homepage": "http://metabolicatlas.org/",
+  "keywords": [
+    "metabolic atlas"
+  ],
+  "license": "GPL-3.0-only",
+  "main": "src/main.js",
+  "name": "met-atlas-viewer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SysBioChalmers/MetAtlas-MapViewer-3D.git"
+  },
+  "scripts": {
+    "build": "rimraf dist && rollup -c",
+    "watch": "rollup -c -w",
+    "dev": "npm-run-all --parallel start watch",
+    "prepare": "npm run build && npm run minify",
+    "minify": "terser public/met-atlas-viewer.js -o build/met-atlas-viewer.min.js -c -m --comments '/Version/'",
+    "start": "serve public"
+  },
+  "version": "0.1.0"
+}
