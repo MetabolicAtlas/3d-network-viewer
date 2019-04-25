@@ -6,6 +6,7 @@
         <link rel="icon" type="image/png" href="favicon.png">
         <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
         <script src="met-atlas-viewer.js"></script>
+        <script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
         <style>
             html, body {
                 width: 100%;
@@ -17,7 +18,7 @@
             .title {
                 position: fixed;
                 top: 0;
-                left: 0;
+                left: 85px;
                 font-family: 'Courier New', Courier, monospace;
             }
         </style>
@@ -48,6 +49,14 @@
                 }
                 return data;
             }
+
+            // Add stats
+            var stats = new Stats();
+            document.getElementById('viewer').appendChild(stats.domElement);
+            requestAnimationFrame(
+                function loop() {stats.update(); requestAnimationFrame(loop)}
+            );
+
             let data = makeData(1000);
             controller.setData(data);
         </script>
