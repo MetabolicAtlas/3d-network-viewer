@@ -26,7 +26,30 @@
         <div id="viewer" class="atlas-viewer"></div>
         <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
         <script>
-            var viewer = MetAtlasViewer.createAt("viewer");
+            var controller = MetAtlasViewer.MetAtlasViewer("viewer");
+            function makeData(numberOfNodes = 100, radius = 2000) {
+
+                function randomInSphere(radius) {
+                    var z = 2*Math.random()-1;
+                    let theta = 2 * Math.PI * Math.random();
+                    let R = Math.random();
+                    let x = R*(Math.sqrt(1-z*z)*Math.cos(theta)) * radius;
+                    let y = R*(Math.sqrt(1-z*z)*Math.sin(theta)) * radius;
+                    z = R*z*radius;
+                    return [x, y, z];
+                }
+
+                var data = {nodes:[], links: []};
+                for (var i = 0; i < numberOfNodes; i++) {
+                    data.nodes.push({id: i, pos: randomInSphere(radius)})
+                    if (i > 0) {
+                        data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
+                    }
+                }
+                return data;
+            }
+            let data = makeData(1000);
+            controller.setData(data);
         </script>
     </body>
 </html>

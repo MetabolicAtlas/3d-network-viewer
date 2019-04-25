@@ -21,4 +21,4 @@
  * @author Martin Norling
  */
 
-export { createAt } from './met-atlas-viewer.js';
+export { MetAtlasViewer } from './met-atlas-viewer.js';
