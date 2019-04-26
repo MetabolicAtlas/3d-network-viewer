@@ -25,64 +25,18 @@
 import {
   BufferGeometry,
   Color,
-  DoubleSide,
   Float32BufferAttribute,
   Group,
   LineBasicMaterial,
   LineSegments,
-  Mesh,
-  MeshPhongMaterial,
   PerspectiveCamera,
+  Points,
+  PointsMaterial,
   Scene,
-  Vector3,
+  TextureLoader,
   VertexColors,
   WebGLRenderer
 } from 'three-js';
-
-/**
- * Creates the buffers needed to display a quad of size 'size' along the x,y-
- * axes in the given position.
- *
- * @param {Object} position - the position of the quad, given as {x:, y:, z:}.
- * @param {number} size - the length of the quad sides.
- * @returns {Object} - {positions:[], normals:[]}
- */
-function getQuadBuffers(position, size) {
-  let halfSize = size / 2;
-  var buffers = {positions: [], normals: []};
-
-  let z = position[2];
-  let mx = position[0] - halfSize;
-  let px = position[0] + halfSize;
-  let my = position[1] - halfSize;
-  let py = position[1] + halfSize;
-  buffers.positions.push( mx,py,z, mx,my,z, px,my,z,
-                          mx,py,z, px,my,z, px,py,z );
-
-  // temp variables
-  var pA = new Vector3();
-  var pB = new Vector3();
-  var pC = new Vector3();
-  var cb = new Vector3();
-  var ab = new Vector3();
-
-  // flat face normals
-  // (the face is flat so I only calculate normals for one triangle)
-  pA.set( mx, py, z );
-  pB.set( mx, my, z );
-  pC.set( px, my, z );
-  cb.subVectors( pC, pB );
-  ab.subVectors( pA, pB );
-  cb.cross( ab );
-  cb.normalize();
-  var nx = cb.x;
-  var ny = cb.y;
-  var nz = cb.z;
-  buffers.normals.push( nx,ny,nz, nx,ny,nz, nx,ny,nz,
-                        nx,ny,nz, nx,ny,nz, nx,ny,nz );
-
-  return buffers;
-}
 
 /**
  * Creates a rendering context for the Metabolic Atlas Viewer.
@@ -132,7 +86,7 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {object} graphData - graph data formatted like {nodes:[], links: []}
    */
-  function setData(graphData) {
+  function setData(graphData, nodeTexture) {
     let nodes = graphData.nodes;
     let links = graphData.links;
 
@@ -143,17 +97,9 @@ function MetAtlasViewer(targetElement) {
     var nodeGeometry = new BufferGeometry();
 
     var nodePositions = [];
-    var nodeNormals = [];
-    var nodeColors = [];
-    var nodeSize = 20;
 
     for ( var i = 0; i < nodes.length; i ++ ) {
-      var quad = getQuadBuffers(data.nodes[i].pos, nodeSize);
-      nodePositions.push.apply(nodePositions, quad.positions);
-      nodeNormals.push.apply(nodeNormals, quad.normals);
-      // colors
-      nodeColors.push( 1.0,1.0,1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,
-                       1.0,1.0,1.0, 1.0,1.0,1.0, 1.0,1.0,1.0 );
+      nodePositions.push.apply(nodePositions, data.nodes[i].pos);
 
       // update index
       nodeIndex[nodes[i].id] = nodes[i].pos;
@@ -165,22 +111,20 @@ function MetAtlasViewer(targetElement) {
     nodeGeometry.addAttribute('position',
                               new Float32BufferAttribute(nodePositions, 3)
                               .onUpload(disposeArray));
-    nodeGeometry.addAttribute('normal',
-                              new Float32BufferAttribute(nodeNormals, 3)
-                              .onUpload(disposeArray));
-    nodeGeometry.addAttribute('color',
-                              new Float32BufferAttribute(nodeColors, 3)
-                              .onUpload(disposeArray));
     nodeGeometry.computeBoundingSphere();
 
-    var nodeMaterial = new MeshPhongMaterial( {
-        color: 0xaaaaaa, specular: 0xffffff, shininess: 250,
-        side: DoubleSide, vertexColors: VertexColors
-    } );
+    // Load sprite and set node material
+    let textureLoader = new TextureLoader();
 
-    var nodeMesh = new Mesh( nodeGeometry, nodeMaterial );
-    graph.add( nodeMesh );
+    let sprite = textureLoader.load(nodeTexture);
+    let nodeMaterial = new PointsMaterial({size: 30,
+                                           map: sprite,
+                                           transparent: true,
+                                           depthTest: true,
+                                           alphaTest: 0.5
+                                          });
 
+    let nodeMesh = new Points( nodeGeometry, nodeMaterial );
 
     // Create the linkGeometry
     var lineMaterial = new LineBasicMaterial( { vertexColors: VertexColors } );
@@ -216,8 +160,14 @@ function MetAtlasViewer(targetElement) {
                               .onUpload(disposeArray));
 
     var lineMesh = new LineSegments(lineGeometry, lineMaterial);
-    graph.add( lineMesh );
 
+    // Set render order and add objects to graph group
+    lineMesh.renderOrder = 0;
+    nodeMesh.renderOrder = 1;
+    graph.add( lineMesh );
+    graph.add( nodeMesh );
+
+    // Finally, add the graph to the scene
     scene.add( graph );
   }
 
