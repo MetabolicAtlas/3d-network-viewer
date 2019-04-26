@@ -28,25 +28,46 @@
         <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
         <script>
             var controller = MetAtlasViewer.MetAtlasViewer("viewer");
-            function makeData(numberOfNodes = 100, radius = 2000) {
+            function makeData(numberOfNodes = 100, radius = 2000, nice = true) {
 
                 function randomInSphere(radius) {
                     var z = 2*Math.random()-1;
                     let theta = 2 * Math.PI * Math.random();
-                    let R = Math.random();
+                    let R = 1-1/(Math.exp(5*Math.random()));
                     let x = R*(Math.sqrt(1-z*z)*Math.cos(theta)) * radius;
                     let y = R*(Math.sqrt(1-z*z)*Math.sin(theta)) * radius;
                     z = R*z*radius;
                     return [x, y, z];
                 }
-
+                let start = Date.now();
                 var data = {nodes:[], links: []};
                 for (var i = 0; i < numberOfNodes; i++) {
                     data.nodes.push({id: i, pos: randomInSphere(radius)})
                     if (i > 0) {
-                        data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
+                        if (!nice) {
+                            data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
+                            continue;
+                        }
+                        var index = 0;
+                        var closest = radius+1;
+                        let a = data.nodes[i];
+                        for (var j = 0; j < i; j++) {
+                            let b = data.nodes[j];
+                            let x = Math.abs(a.pos[0]-b.pos[0]);
+                            let y = Math.abs(a.pos[1]-b.pos[1]);
+                            let z = Math.abs(a.pos[2]-b.pos[2]);
+                            let distance = Math.sqrt( x*x + y*y + z*z );
+                            if (distance < closest) {
+                                closest = distance;
+                                index = j;
+                            }
+                        }
+                        data.links.push({'s':i, 't':index});
                     }
                 }
+                console.log("Generated a " + (nice ? "nice " : "") + "graph of " +
+                            numberOfNodes + " nodes in " + (new Date()-start) +
+                            " ms.");
                 return data;
             }
 
@@ -57,7 +78,7 @@
                 function loop() {stats.update(); requestAnimationFrame(loop)}
             );
 
-            let data = makeData(1000);
+            let data = makeData(5000);
             controller.setData(data);
         </script>
     </body>
