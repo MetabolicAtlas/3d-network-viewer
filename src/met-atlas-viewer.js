@@ -146,7 +146,7 @@ function MetAtlasViewer(targetElement) {
     // Create the link material and geometry
     var lineMaterial = new LineBasicMaterial({vertexColors: VertexColors,
       transparent: true,
-      depthTest: false,
+      depthTest: true,
       opacity: 0.67
      });
 
