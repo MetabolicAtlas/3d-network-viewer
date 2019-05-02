@@ -31,7 +31,7 @@
     "url": "git+https://github.com/SysBioChalmers/MetAtlas-MapViewer-3D.git"
   },
   "scripts": {
-    "build": "rimraf build && rimraf public/met-atlas-viewer.js && rollup -c",
+    "build": "rimraf public/met-atlas-viewer.js && rollup -c",
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch",
     "prepare": "npm run build && npm run minify",

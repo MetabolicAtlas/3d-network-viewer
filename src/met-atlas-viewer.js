@@ -29,13 +29,16 @@ import {
   Group,
   LineBasicMaterial,
   LineSegments,
+  NearestFilter,
   PerspectiveCamera,
   Points,
   PointsMaterial,
   Scene,
   TextureLoader,
+  Uint8BufferAttribute,
   VertexColors,
-  WebGLRenderer
+  WebGLRenderer,
+  WebGLRenderTarget
 } from 'three-js';
 
 /**
@@ -50,7 +53,7 @@ function MetAtlasViewer(targetElement) {
   let fieldOfView = 270;
   let aspect = window.innerWidth / window.innerHeight;
   let near = 1;
-  let far = 4000;
+  let far = 5000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
 
@@ -58,8 +61,23 @@ function MetAtlasViewer(targetElement) {
   var scene = new Scene();
   scene.background = new Color( 0xdddddd );
 
+  // Create color picking scene and target
+  var indexScene = new Scene();
+  indexScene.background = new Color( 0xffffff );
+  var indexTarget = new WebGLRenderTarget(1,1);
+
   // Create object group for the graph
   var graph = new Group();
+
+  // Create nodeMesh as a global so that we can modify it later
+  var nodeMesh;
+
+  // Create color arrays for the nodes
+  var nodeColors = [];
+  var indexColors = [];
+
+  // Create a list to keep track of selected nodes.
+  var selected = [];
 
   // Create renderer
   var renderer = new WebGLRenderer();
@@ -69,8 +87,9 @@ function MetAtlasViewer(targetElement) {
   // Add the renderer to the target element
   document.getElementById(targetElement).appendChild(renderer.domElement);
 
-  // Add window resize listener
+  // Add window resize listener and mouse listener
   window.addEventListener( 'resize', onWindowResize, false );
+  window.addEventListener( 'click', onMouseClick, false );
 
   /**
    * Sets the graph data to display in the viewer.
@@ -90,46 +109,50 @@ function MetAtlasViewer(targetElement) {
     let nodes = graphData.nodes;
     let links = graphData.links;
 
-    // Make an index to keep track of nodes
+    // Make an index to keep track of nodes for the connections
     var nodeIndex = {}
 
-    // create the node geometry
+    // create the node and index geometries
     var nodeGeometry = new BufferGeometry();
+    var indexGeometry = new BufferGeometry();
 
+    // Set node positions and colors, and set a unique color for each node. The
+    // index color will be used for selecting nodes in the scene.
     var nodePositions = [];
-
     for ( var i = 0; i < nodes.length; i ++ ) {
       nodePositions.push.apply(nodePositions, data.nodes[i].pos);
+      nodeColors.push( 255, 255, 255 );
+      indexColors.push(Math.floor(i/(256*256)),
+                       Math.floor(i/256) % 256,
+                       i % 256
+                      );
 
       // update index
       nodeIndex[nodes[i].id] = nodes[i].pos;
     }
-    function disposeArray() {
-        this.array = null;
-    }
-
+    // bind arrays to node geometry attributes
     nodeGeometry.addAttribute('position',
-                              new Float32BufferAttribute(nodePositions, 3)
-                              .onUpload(disposeArray));
+                              new Float32BufferAttribute(nodePositions, 3));
+    nodeGeometry.addAttribute('color',
+                              new Uint8BufferAttribute(nodeColors, 3, true));
     nodeGeometry.computeBoundingSphere();
 
-    // Load sprite and set node material
-    let textureLoader = new TextureLoader();
+    // ... and to index geometry attributes
+    indexGeometry.addAttribute('position',
+                               new Float32BufferAttribute(nodePositions, 3));
+    indexGeometry.addAttribute('color',
+                               new Uint8BufferAttribute(indexColors, 3, true));
 
-    let sprite = textureLoader.load(nodeTexture);
-    let nodeMaterial = new PointsMaterial({size: 30,
-                                           map: sprite,
-                                           transparent: true,
-                                           depthTest: true,
-                                           alphaTest: 0.5
-                                          });
+    // Create the link material and geometry
+    var lineMaterial = new LineBasicMaterial({vertexColors: VertexColors,
+      transparent: true,
+      depthTest: false,
+      opacity: 0.67
+     });
 
-    let nodeMesh = new Points( nodeGeometry, nodeMaterial );
-
-    // Create the linkGeometry
-    var lineMaterial = new LineBasicMaterial( { vertexColors: VertexColors } );
     var linePositions = [];
     var lineColors = [];
+
     for ( var i = 0; i < links.length; i ++ ) {
       // Check the the nodes are in the graph
       if (!(links[i].s in nodeIndex)) {
@@ -144,31 +167,158 @@ function MetAtlasViewer(targetElement) {
       }
       // Start position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].s]);
-      lineColors.push( 1.0, 0.0, 0.0 );
+      lineColors.push( 0.0, 1.0, 0.0 );
 
       // End position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].t]);
-      lineColors.push( 1.0, 0.0, 0.0 );
+      lineColors.push( 0.0, 0.0, 1.0 );
     }
 
+    // set line geometry attributes and mesh.
     var lineGeometry = new BufferGeometry();
     lineGeometry.addAttribute('position',
-                              new Float32BufferAttribute(linePositions, 3)
-                              .onUpload(disposeArray));
+                              new Float32BufferAttribute(linePositions, 3));
     lineGeometry.addAttribute('color',
-                              new Float32BufferAttribute(lineColors, 3)
-                              .onUpload(disposeArray));
+                              new Float32BufferAttribute(lineColors, 3));
 
     var lineMesh = new LineSegments(lineGeometry, lineMaterial);
 
-    // Set render order and add objects to graph group
-    lineMesh.renderOrder = 0;
-    nodeMesh.renderOrder = 1;
-    graph.add( lineMesh );
-    graph.add( nodeMesh );
+    // Load sprite and set node material
+    let textureLoader = new TextureLoader();
 
-    // Finally, add the graph to the scene
-    scene.add( graph );
+    // The sprite texture needs to be loaded so that we can parse it to make the
+    // index sprite texture, which is why all this code is in the callback.
+    var sprite = textureLoader.load(nodeTexture, function() {
+      let nodeMaterial = new PointsMaterial({size: 40,
+                                             vertexColors: VertexColors,
+                                             map: sprite,
+                                             transparent: true,
+                                             depthTest: true,
+                                             alphaTest: 0.5
+                                            });
+
+      var indexSprite = textureLoader.load(makeIndexSprite(sprite));
+      indexSprite.magFilter = NearestFilter;
+      indexSprite.minFilter = NearestFilter;
+
+      let indexMaterial = new PointsMaterial({size: 40,
+                                              vertexColors: VertexColors,
+                                              map: indexSprite,
+                                              transparent: true,
+                                              depthTest: true,
+                                              flatShading: true,
+                                              alphaTest: 0.5
+                                             });
+
+      nodeMesh = new Points( nodeGeometry, nodeMaterial );
+      let indexMesh = new Points( indexGeometry, indexMaterial );
+
+      // Set render order and add objects to graph group
+      lineMesh.renderOrder = 0;
+      nodeMesh.renderOrder = 1;
+      graph.add( lineMesh );
+      graph.add( nodeMesh );
+
+      // Finally, add the graph to the scene, and the index geometry to the index
+      // scene
+      scene.add( graph );
+      indexScene.add( indexMesh );
+    });
+  }
+
+  /**
+   * Creates a blank white texture which has the approximate alpha channel of
+   * of the parameter texture. The alpha channel will be preserved but limited
+   * to 0 (if A<=128) or 255. This is in order to make sure that the index
+   * buffer has the exact colors that it should have.
+   *
+   * @param {Object} baseSprite - a Three-js sprite texture.
+   * @returns {string} - the data url to the new sprite.
+   */
+  function makeIndexSprite(baseSprite) {
+    // bind sprite to a canvas so that we can interact with it
+    var canvas = document.createElement("canvas");
+    canvas.width = baseSprite.image.width;
+    canvas.height = baseSprite.image.height;
+
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(baseSprite.image, 0, 0);
+
+    // create a new sprite which is pure white and have the transparency of the
+    // original sprite (without antialiasing).
+    let dataSize = baseSprite.image.width*baseSprite.image.height*4;
+    var spriteData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i <= dataSize; i+=4) {
+      spriteData.data[i] = 255;
+      spriteData.data[i + 1] = 255;
+      spriteData.data[i + 2] = 255;
+      spriteData.data[i + 3] = spriteData.data[i+3] <= 128 ? 0 : 255;
+    }
+    ctx.putImageData(spriteData, 0, 0);
+
+    // return the data url so that this function can be used with
+    // textureLoader.load().
+    return canvas.toDataURL();
+  }
+
+  /**
+   * Mouse click callback which does scene object picking by rendering the pixel
+   * at the mouse pointer, converts its color to an index position and updates
+   * that node with a new color.
+   *
+   * @param {event} - A mouse click event.
+   */
+  function onMouseClick( event ) {
+
+    // set the camera to only render the pixel under the cursor.
+    camera.setViewOffset(renderer.domElement.width,
+                         renderer.domElement.height,
+                         event.clientX * window.devicePixelRatio,
+                         event.clientY * window.devicePixelRatio,
+                         1,
+                         1);
+
+    // change rendering target so that the image stays on the screen
+    renderer.setRenderTarget(indexTarget);
+    renderer.render(indexScene, camera);
+
+    var pixelBuffer = new Uint8Array(4);
+
+    renderer.readRenderTargetPixels(indexTarget, 0, 0, 1, 1, pixelBuffer);
+    // check if the color is white (background)
+    if (pixelBuffer[2] == pixelBuffer[1] == pixelBuffer[1] == 255) {
+      return;
+    }
+    var id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
+
+    // reset last selected sprite
+    while (selected.length > 0) {
+      let item = selected.pop();
+      setSpriteColor(item, [255, 255, 255]);
+    }
+
+    // save current selected id
+    selected.push(id);
+
+    // update selected if with red color
+    setSpriteColor(id, [255,0,0]);
+
+    // reset the camera and rendering target.
+    camera.clearViewOffset();
+    renderer.setRenderTarget(null);
+  }
+
+  /**
+   * Sets the color of 'spriteNum' in the nodeMesh to 'color'.
+   *
+   * @param {number} spriteNum - id of the sprite in the nodemesh
+   * @param {array} color - color to set the sprite to.
+   */
+  function setSpriteColor(spriteNum, color) {
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = color[0];
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = color[1];
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = color[2];
+    nodeMesh.geometry.attributes.color.needsUpdate = true;
   }
 
   /**
@@ -186,8 +336,10 @@ function MetAtlasViewer(targetElement) {
    * Currently applies a small rotation to the scene to make it less boring.
    */
   function render() {
-    let time = Date.now() * 0.001;
-    graph.rotation.y = time * 0.2;
+    let time = Date.now() * 0.0001;
+    camera.position.x = 3000 * Math.cos(time);
+    camera.position.z = 3000 * Math.sin(time);
+    camera.lookAt(0,0,0);
     renderer.render( scene, camera );
   }
 
