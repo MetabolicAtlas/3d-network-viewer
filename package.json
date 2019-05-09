@@ -10,14 +10,14 @@
   "description": "ThreeJS based graph viewer.",
   "devDependencies": {
     "rimraf": "^2.6.3",
-    "rollup": "^1.10.1",
+    "rollup": "^1.11.3",
     "terser": "^3.17.0",
     "serve": "^11.0.0",
     "npm-run-all": "^4.1.5",
     "rollup-plugin-node-resolve": "^4.2.3"
   },
   "dependencies": {
-    "three-js": "mrdoob/three.js#a874829"
+    "three-js": "mrdoob/three.js#98c7013"
   },
   "homepage": "http://metabolicatlas.org/",
   "keywords": [

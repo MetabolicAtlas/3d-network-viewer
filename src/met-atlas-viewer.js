@@ -91,6 +91,9 @@ function MetAtlasViewer(targetElement) {
   window.addEventListener( 'resize', onWindowResize, false );
   window.addEventListener( 'click', onMouseClick, false );
 
+  // Set a camera control placeholder
+  var cameraControls;
+
   /**
    * Sets the graph data to display in the viewer.
    *
@@ -105,7 +108,7 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {object} graphData - graph data formatted like {nodes:[], links: []}
    */
-  function setData(graphData, nodeTexture) {
+  function setData(graphData, nodeTexture, nodeSize) {
     let nodes = graphData.nodes;
     let links = graphData.links;
 
@@ -148,7 +151,7 @@ function MetAtlasViewer(targetElement) {
       transparent: true,
       depthTest: true,
       opacity: 0.67
-     });
+    });
 
     var linePositions = [];
     var lineColors = [];
@@ -189,7 +192,7 @@ function MetAtlasViewer(targetElement) {
     // The sprite texture needs to be loaded so that we can parse it to make the
     // index sprite texture, which is why all this code is in the callback.
     var sprite = textureLoader.load(nodeTexture, function() {
-      let nodeMaterial = new PointsMaterial({size: 40,
+      let nodeMaterial = new PointsMaterial({size: nodeSize,
                                              vertexColors: VertexColors,
                                              map: sprite,
                                              transparent: true,
@@ -201,14 +204,14 @@ function MetAtlasViewer(targetElement) {
       indexSprite.magFilter = NearestFilter;
       indexSprite.minFilter = NearestFilter;
 
-      let indexMaterial = new PointsMaterial({size: 40,
+      let indexMaterial = new PointsMaterial({size: nodeSize,
                                               vertexColors: VertexColors,
                                               map: indexSprite,
                                               transparent: true,
                                               depthTest: true,
                                               flatShading: true,
                                               alphaTest: 0.5
-                                             });
+                                            });
 
       nodeMesh = new Points( nodeGeometry, nodeMaterial );
       let indexMesh = new Points( indexGeometry, indexMaterial );
@@ -220,9 +223,10 @@ function MetAtlasViewer(targetElement) {
       graph.add( nodeMesh );
 
       // Finally, add the graph to the scene, and the index geometry to the index
-      // scene
+      // scene, and render to show the new geometry
       scene.add( graph );
       indexScene.add( indexMesh );
+      requestAnimationFrame(render);
     });
   }
 
@@ -306,6 +310,18 @@ function MetAtlasViewer(targetElement) {
     // reset the camera and rendering target.
     camera.clearViewOffset();
     renderer.setRenderTarget(null);
+    // render the scene to make sure that it's updated
+    requestAnimationFrame(render);
+  }
+
+  /**
+   * Sets the camera control function.
+   * @param {function} cameraControlFunction
+   */
+  function setCameraControls(cameraControlFunction) {
+    cameraControls = new cameraControlFunction(camera, renderer.domElement);
+    cameraControls.addEventListener( 'change', render );
+    return cameraControls;
   }
 
   /**
@@ -329,17 +345,15 @@ function MetAtlasViewer(targetElement) {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
+    if (cameraControls) {
+      cameraControls.handleResize();
+    }
   }
 
   /**
    * Rendering function.
-   * Currently applies a small rotation to the scene to make it less boring.
    */
   function render() {
-    let time = Date.now() * 0.0001;
-    camera.position.x = 3000 * Math.cos(time);
-    camera.position.z = 3000 * Math.sin(time);
-    camera.lookAt(0,0,0);
     renderer.render( scene, camera );
   }
 
@@ -349,15 +363,20 @@ function MetAtlasViewer(targetElement) {
    */
   function animate() {
     requestAnimationFrame(animate);
-    render();
+    if (cameraControls) {
+      cameraControls.update();
+    } else {
+      render();
+    }
   }
 
   // Start the rendering cycle
   animate();
 
   // Return an interaction "controller" that we can use to control the scene.
-  // (currently it's only used to access the setData function)
-  return {setData: setData, };
+  // Currently it's only used to access the setData and setCameraControls
+  // functions.
+  return {setData: setData, setCameraControls: setCameraControls};
 }
 
 export { MetAtlasViewer };

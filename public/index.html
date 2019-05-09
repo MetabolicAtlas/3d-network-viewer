@@ -6,7 +6,19 @@
         <link rel="icon" type="image/png" href="favicon.png">
         <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
         <script src="met-atlas-viewer.js"></script>
+        <script>
+            // THREE is exported by MetAtlasViewer, but needs to be re-cast to
+            // remove the prefix and allow other scripts to act as if three-js
+            // was loaded.
+            var THREE = MetAtlasViewer.THREE;
+        </script>
         <script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
+        <!-- This is the trackball controls from the three-js examples, slightly
+             modified so that the TrackballControls()-function is loaded by
+             itself instead of trying to tie itself in as
+             THREE.TrackballControls().
+        -->
+        <script src="TrackballControls.js"></script>
         <style>
             html, body {
                 width: 100%;
@@ -79,7 +91,23 @@
             );
 
             let data = makeData(5000);
-            controller.setData(data, "node_sprite.png");
+            controller.setData(data, "node_sprite.png", 15);
+
+            // Add camera controls
+            var controls = controller.setCameraControls(TrackballControls);
+
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 0.8;
+
+            controls.noZoom = false;
+            controls.noPan = false;
+
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+
+            controls.keys = [ 65, 83, 68 ];
+
         </script>
     </body>
 </html>
