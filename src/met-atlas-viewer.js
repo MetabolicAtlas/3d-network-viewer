@@ -107,6 +107,9 @@ function MetAtlasViewer(targetElement) {
   // Set a camera control placeholder
   var cameraControls;
 
+  // Set default controls
+
+
   /**
    * Sets the graph data to display in the viewer.
    *
@@ -296,9 +299,8 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
-   * Mouse click callback which does scene object picking by rendering the pixel
-   * at the mouse pointer, converts its color to an index position and updates
-   * that node with a new color.
+   * Mouse click callback which calls pickInScene to get the current object
+   * under the mouse cursor and colors it red.
    *
    * @param {event} - A mouse click event.
    */
@@ -324,6 +326,14 @@ function MetAtlasViewer(targetElement) {
     requestAnimationFrame(render);
   }
 
+  /**
+   * Does scene object picking by rendering the pixel at the mouse pointer,
+   * converts its color to an index position and returns that id.
+   *
+   * @param {*} posX - X-position to pick in the scene.
+   * @param {*} posY - Y-position to pick in the scene.
+   * @returns {number} - ID number of the picked object.
+   */
   function pickInScene(posX, posY) {
 
     // set the camera to only render the pixel under the cursor.
