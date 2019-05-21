@@ -41,6 +41,8 @@ import {
   WebGLRenderTarget
 } from 'three-js';
 
+import { AtlasViewerControls } from './atlas-viewer-controls';
+
 /**
  * Creates a rendering context for the Metabolic Atlas Viewer.
  *
@@ -108,7 +110,7 @@ function MetAtlasViewer(targetElement) {
   var cameraControls;
 
   // Set default controls
-
+  setCameraControls(AtlasViewerControls);
 
   /**
    * Sets the graph data to display in the viewer.
