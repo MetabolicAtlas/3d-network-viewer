@@ -81,15 +81,28 @@ function MetAtlasViewer(targetElement) {
 
   // Create renderer
   var renderer = new WebGLRenderer();
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
   // Add the renderer to the target element
   document.getElementById(targetElement).appendChild(renderer.domElement);
 
+  // Create a div to use for node mouseover information
+  var infoBox = document.createElement('div');
+  infoBox.style.position = 'fixed';
+  infoBox.style.top = '0';
+  infoBox.style.left = '0';
+  infoBox.style.visibility = 'hidden';
+  infoBox.style.backgroundColor = 'rgba(255,255,255,0.5)';
+  infoBox.style.padding = '10px';
+  infoBox.style.borderRadius = '5px';
+  infoBox.style.border = '1px solid rgba(0,0,0,0.6)';
+  document.getElementById(targetElement).appendChild(infoBox);
+
   // Add window resize listener and mouse listener
-  window.addEventListener( 'resize', onWindowResize, false );
-  window.addEventListener( 'click', onMouseClick, false );
+  window.addEventListener('resize', onWindowResize, false);
+  window.addEventListener('mousemove', onMouseMove, false);
+  window.addEventListener('click', onMouseClick, false);
 
   // Set a camera control placeholder
   var cameraControls;
@@ -266,21 +279,60 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Mouse move callback that does scene object picking.
+   * @param {event} event - A mouse move event
+   */
+  function onMouseMove(event) {
+    var items = pickInScene(event.clientX, event.clientY);
+    items.forEach(id => {
+      infoBox.style.top = (event.clientY+5).toString() + "px";
+      infoBox.style.left = (event.clientX+5).toString() + "px";
+      infoBox.style.visibility = 'visible';
+      infoBox.innerHTML = 'Node: ' + id.toString();
+    });
+    if (items.length == 0) {
+      infoBox.style.visibility = 'hidden';
+    }
+  }
+
+  /**
    * Mouse click callback which does scene object picking by rendering the pixel
    * at the mouse pointer, converts its color to an index position and updates
    * that node with a new color.
    *
    * @param {event} - A mouse click event.
    */
-  function onMouseClick( event ) {
+  function onMouseClick(event) {
+
+    var items = pickInScene(event.clientX, event.clientY);
+
+    // reset last selected sprite
+    while (selected.length > 0) {
+      let item = selected.pop();
+      setSpriteColor(item, [255, 255, 255]);
+    }
+
+    // save current selected ids
+    items.forEach(id => {
+      selected.push(id);
+
+      // update selected if with red color
+      setSpriteColor(id, [255,0,0]);
+    });
+
+    // render the scene to make sure that it's updated
+    requestAnimationFrame(render);
+  }
+
+  function pickInScene(posX, posY) {
 
     // set the camera to only render the pixel under the cursor.
     camera.setViewOffset(renderer.domElement.width,
-                         renderer.domElement.height,
-                         event.clientX * window.devicePixelRatio,
-                         event.clientY * window.devicePixelRatio,
-                         1,
-                         1);
+      renderer.domElement.height,
+      posX * window.devicePixelRatio,
+      posY * window.devicePixelRatio,
+      1,
+      1);
 
     // change rendering target so that the image stays on the screen
     renderer.setRenderTarget(indexTarget);
@@ -295,23 +347,16 @@ function MetAtlasViewer(targetElement) {
     }
     var id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
 
-    // reset last selected sprite
-    while (selected.length > 0) {
-      let item = selected.pop();
-      setSpriteColor(item, [255, 255, 255]);
-    }
-
-    // save current selected id
-    selected.push(id);
-
-    // update selected if with red color
-    setSpriteColor(id, [255,0,0]);
-
     // reset the camera and rendering target.
     camera.clearViewOffset();
     renderer.setRenderTarget(null);
-    // render the scene to make sure that it's updated
-    requestAnimationFrame(render);
+
+    // don't return background color
+    if (id == 16777215) {
+      return [];
+    }
+
+    return [id];
   }
 
   /**
@@ -348,6 +393,7 @@ function MetAtlasViewer(targetElement) {
     if (cameraControls) {
       cameraControls.handleResize();
     }
+    requestAnimationFrame(render);
   }
 
   /**
