@@ -45,7 +45,8 @@
                 let start = Date.now();
                 var data = {nodes:[], links: []};
                 for (var i = 0; i < numberOfNodes; i++) {
-                    data.nodes.push({id: i, pos: randomInSphere(radius)})
+                    data.nodes.push({id: i, pos: randomInSphere(radius),
+                                     g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)]})
                     if (i > 0) {
                         if (!nice) {
                             data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
@@ -82,7 +83,10 @@
             );
 
             let data = makeData(5000);
-            controller.setData(data, "node_sprite.png", 15);
+            controller.setData(data, [{group:'e', sprite:'sprite_round.png'},
+                                      {group:'r', sprite:'sprite_square.png'},
+                                      {group:'m', sprite:'sprite_triangle.png'}
+                                     ], 15);
         </script>
     </body>
 </html>

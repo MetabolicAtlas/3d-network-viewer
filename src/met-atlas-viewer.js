@@ -48,7 +48,7 @@ import { AtlasViewerControls } from './atlas-viewer-controls';
  *
  * @param {string} targetElement - The ID of the target DOM element where the
  *     viewer should be placed.
- * @returns A control object with functions for controlling the viewer.
+ * @returns {Object} A control object with functions for controlling the viewer.
  */
 function MetAtlasViewer(targetElement) {
   // Camera variables
@@ -74,12 +74,17 @@ function MetAtlasViewer(targetElement) {
   // Create nodeMesh as a global so that we can modify it later
   var nodeMesh;
 
-  // Create color arrays for the nodes
+  // Create color and material arrays for the nodes
   var nodeColors = [];
+  var nodeMaterials = [];
   var indexColors = [];
+  var indexMaterials = [];
 
   // Create a list to keep track of selected nodes.
   var selected = [];
+
+  // Create a texture loader for later
+  const textureLoader = new TextureLoader();
 
   // Create renderer
   var renderer = new WebGLRenderer();
@@ -125,8 +130,11 @@ function MetAtlasViewer(targetElement) {
    * where 's' and 't' should be the id of the start and end nodes of the link.
    *
    * @param {object} graphData - graph data formatted like {nodes:[], links: []}
+   * @param {object} nodeTexture - texture images formatted as [{group:group,
+   *     sprite:<image>}]
+   * @param {object} nodeSize - Size of the nodes in graph coordinates
    */
-  function setData(graphData, nodeTexture, nodeSize) {
+  function setData(graphData, nodeTextures, nodeSize) {
     let nodes = graphData.nodes;
     let links = graphData.links;
 
@@ -137,20 +145,33 @@ function MetAtlasViewer(targetElement) {
     var nodeGeometry = new BufferGeometry();
     var indexGeometry = new BufferGeometry();
 
+    // Sort the vertex positions by group, so that we can set the materials
+    // properly
+    nodes.sort((a,b) => a.g > b.g);
+
+    // Sort the materials as well so that the arrays match
+    nodeTextures.sort((a,b) => a.group > b.group);
+
     // Set node positions and colors, and set a unique color for each node. The
     // index color will be used for selecting nodes in the scene.
     var nodePositions = [];
-    for ( var i = 0; i < nodes.length; i ++ ) {
-      nodePositions.push.apply(nodePositions, data.nodes[i].pos);
+    var nodeGroups = {};
+    nodes.forEach((node,i) => {
+      nodePositions.push.apply(nodePositions, node.pos);
+      if (nodeGroups[node.g] === undefined) {
+        nodeGroups[node.g] = 1;
+      } else {
+        nodeGroups[node.g] += 1;
+      }
       nodeColors.push( 255, 255, 255 );
       indexColors.push(Math.floor(i/(256*256)),
                        Math.floor(i/256) % 256,
                        i % 256
                       );
-
       // update index
-      nodeIndex[nodes[i].id] = nodes[i].pos;
-    }
+      nodeIndex[node.id] = node.pos;
+    });
+
     // bind arrays to node geometry attributes
     nodeGeometry.addAttribute('position',
                               new Float32BufferAttribute(nodePositions, 3));
@@ -158,7 +179,16 @@ function MetAtlasViewer(targetElement) {
                               new Uint8BufferAttribute(nodeColors, 3, true));
     nodeGeometry.computeBoundingSphere();
 
-    // ... and to index geometry attributes
+    let last = 0;
+    // Set material groups
+    nodeTextures.forEach(function(texture, i) {
+      let current = nodeGroups[texture.group];
+      nodeGeometry.addGroup(last, (last + current), i);
+      indexGeometry.addGroup(last,(last + current), i);
+      last += current;
+    });
+
+    // Set index geometry attributes
     indexGeometry.addAttribute('position',
                                new Float32BufferAttribute(nodePositions, 3));
     indexGeometry.addAttribute('color',
@@ -203,48 +233,62 @@ function MetAtlasViewer(targetElement) {
                               new Float32BufferAttribute(lineColors, 3));
 
     var lineMesh = new LineSegments(lineGeometry, lineMaterial);
+    // Add the lines to the graph group and set it to render first
+    graph.add(lineMesh);
+    lineMesh.renderOrder = 0;
 
-    // Load sprite and set node material
-    let textureLoader = new TextureLoader();
+    let textures = [];
+    nodeTextures.forEach(tex => textures.push(loadTexture(tex.sprite, nodeSize)));
 
-    // The sprite texture needs to be loaded so that we can parse it to make the
-    // index sprite texture, which is why all this code is in the callback.
-    var sprite = textureLoader.load(nodeTexture, function() {
-      let nodeMaterial = new PointsMaterial({size: nodeSize,
-                                             vertexColors: VertexColors,
-                                             map: sprite,
-                                             transparent: true,
-                                             depthTest: true,
-                                             alphaTest: 0.5
-                                            });
+    Promise.all(textures).then(function() {
+      // All sprite materials are available here
 
-      var indexSprite = textureLoader.load(makeIndexSprite(sprite));
-      indexSprite.magFilter = NearestFilter;
-      indexSprite.minFilter = NearestFilter;
+      nodeMesh = new Points(nodeGeometry, nodeMaterials);
+      let indexMesh = new Points(indexGeometry, indexMaterials);
 
-      let indexMaterial = new PointsMaterial({size: nodeSize,
-                                              vertexColors: VertexColors,
-                                              map: indexSprite,
-                                              transparent: true,
-                                              depthTest: true,
-                                              flatShading: true,
-                                              alphaTest: 0.5
-                                            });
-
-      nodeMesh = new Points( nodeGeometry, nodeMaterial );
-      let indexMesh = new Points( indexGeometry, indexMaterial );
-
-      // Set render order and add objects to graph group
-      lineMesh.renderOrder = 0;
+      // Add the nodes to the graph group and set it to render second
       nodeMesh.renderOrder = 1;
-      graph.add( lineMesh );
-      graph.add( nodeMesh );
+      graph.add(nodeMesh);
 
       // Finally, add the graph to the scene, and the index geometry to the index
       // scene, and render to show the new geometry
-      scene.add( graph );
-      indexScene.add( indexMesh );
+      scene.add(graph);
+      indexScene.add(indexMesh);
       requestAnimationFrame(render);
+    });
+
+  }
+
+  function loadTexture(filename, nodeSize = 20) {
+    return new Promise(function (resolve, reject) {
+
+      // The sprite texture needs to be loaded so that we can parse it to make
+      // the index sprite texture, which is why all this code is in callbacks.
+      var sprite = textureLoader.load(filename, function () {
+        nodeMaterials.push(new PointsMaterial({
+          size: nodeSize,
+          vertexColors: VertexColors,
+          map: sprite,
+          transparent: true,
+          depthTest: true,
+          alphaTest: 0.5
+        }));
+
+        var indexSprite = textureLoader.load(makeIndexSprite(sprite));
+        indexSprite.magFilter = NearestFilter;
+        indexSprite.minFilter = NearestFilter;
+
+        indexMaterials.push(new PointsMaterial({
+          size: nodeSize,
+          vertexColors: VertexColors,
+          map: indexSprite,
+          transparent: true,
+          depthTest: true,
+          flatShading: true,
+          alphaTest: 0.5
+        }));
+      });
+      resolve(`Loaded texture '${filename}'`);
     });
   }
 
@@ -255,7 +299,7 @@ function MetAtlasViewer(targetElement) {
    * buffer has the exact colors that it should have.
    *
    * @param {Object} baseSprite - a Three-js sprite texture.
-   * @returns {string} - the data url to the new sprite.
+   * @returns {string} The data url to the new sprite.
    */
   function makeIndexSprite(baseSprite) {
     // bind sprite to a canvas so that we can interact with it
@@ -334,7 +378,7 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {*} posX - X-position to pick in the scene.
    * @param {*} posY - Y-position to pick in the scene.
-   * @returns {number} - ID number of the picked object.
+   * @returns {number} ID number of the picked object.
    */
   function pickInScene(posX, posY) {
 
@@ -372,7 +416,9 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
-   * Sets the camera control function.
+   * Sets the camera control function, and adds an event listener which calls
+   * the render function whenever the controls emit a change event.
+   *
    * @param {function} cameraControlFunction
    */
   function setCameraControls(cameraControlFunction) {
