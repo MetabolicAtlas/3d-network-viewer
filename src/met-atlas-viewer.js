@@ -114,6 +114,12 @@ function MetAtlasViewer(targetElement) {
   // Set a camera control placeholder
   var cameraControls;
 
+  // Get the target DOM element for generating events
+  var eventElement = document.getElementById(targetElement);
+
+  // holds information to connect nodes to graph id's
+  var nodeInfo = [];
+
   // Set default controls
   setCameraControls(AtlasViewerControls);
 
@@ -169,7 +175,9 @@ function MetAtlasViewer(targetElement) {
                        i % 256
                       );
       // update index
-      nodeIndex[node.id] = node.pos;
+      nodeIndex[node.id] = {pos: node.pos, index: i};
+      // update info
+      nodeInfo.push({id: node.id, connections: {to:[], from:[]}});
     });
 
     // bind arrays to node geometry attributes
@@ -217,12 +225,18 @@ function MetAtlasViewer(targetElement) {
         continue
       }
       // Start position and color
-      linePositions.push.apply(linePositions, nodeIndex[links[i].s]);
+      linePositions.push.apply(linePositions, nodeIndex[links[i].s].pos);
       lineColors.push( 0.0, 1.0, 0.0 );
 
       // End position and color
-      linePositions.push.apply(linePositions, nodeIndex[links[i].t]);
+      linePositions.push.apply(linePositions, nodeIndex[links[i].t].pos);
       lineColors.push( 0.0, 0.0, 1.0 );
+
+      // Add connections to nodeInfo
+      // to:
+      nodeInfo[nodeIndex[links[i].s].index].connections.to.push(links[i].t);
+      // from:
+      nodeInfo[nodeIndex[links[i].t].index].connections.from.push(links[i].s)
     }
 
     // set line geometry attributes and mesh.
@@ -337,7 +351,7 @@ function MetAtlasViewer(targetElement) {
       infoBox.style.top = (event.clientY+5).toString() + "px";
       infoBox.style.left = (event.clientX+5).toString() + "px";
       infoBox.style.visibility = 'visible';
-      infoBox.innerHTML = 'Node: ' + id.toString();
+      infoBox.innerHTML = nodeInfo[id].id;
     });
     if (items.length == 0) {
       infoBox.style.visibility = 'hidden';
@@ -367,6 +381,19 @@ function MetAtlasViewer(targetElement) {
       // update selected if with red color
       setSpriteColor(id, [255,0,0]);
     });
+
+    // Create new selection event
+    let selectEvent = new CustomEvent(
+        "select",
+        {
+            detail: {
+              items: items.map(i => {return nodeInfo[i];})
+            },
+            bubbles: false,
+            cancelable: true
+        });
+
+    eventElement.dispatchEvent(selectEvent);
 
     // render the scene to make sure that it's updated
     requestAnimationFrame(render);

@@ -87,6 +87,12 @@
                                       {group:'r', sprite:'sprite_square.png'},
                                       {group:'m', sprite:'sprite_triangle.png'}
                                      ], 15);
+
+            // Subscribe to node selection events
+            document.getElementById('viewer').addEventListener('select',
+                function($event) {
+                    console.debug($event.detail);
+                });
         </script>
     </body>
 </html>
