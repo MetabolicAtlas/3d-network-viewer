@@ -177,7 +177,10 @@ function MetAtlasViewer(targetElement) {
       // update index
       nodeIndex[node.id] = {pos: node.pos, index: i};
       // update info
-      nodeInfo.push({id: node.id, connections: {to:[], from:[]}});
+      nodeInfo.push({id: node.id,
+                     connections: {to:[], from:[]},
+                     index: i,
+                     group: node.g});
     });
 
     // bind arrays to node geometry attributes
@@ -273,6 +276,27 @@ function MetAtlasViewer(targetElement) {
 
   }
 
+  function filterBy(filterString) {
+    for (let key of Object.keys(filterString)) {
+      if (!Array.isArray(filterString[key])) {
+        filterString[key] = Array(filterString[key]);
+      }
+    }
+
+    let items = nodeInfo.filter(v => {
+      for (const key of Object.keys(filterString)) {
+        if (filterString[key].includes(v[key])) {
+          return true;
+        }
+      }
+      return false;
+    }).map(i => {return i.index});
+    select(items);
+
+    // render the scene to make sure that it's updated
+    requestAnimationFrame(render);
+  }
+
   function loadTexture(filename, nodeSize = 20) {
     return new Promise(function (resolve, reject) {
 
@@ -358,16 +382,7 @@ function MetAtlasViewer(targetElement) {
     }
   }
 
-  /**
-   * Mouse click callback which calls pickInScene to get the current object
-   * under the mouse cursor and colors it red.
-   *
-   * @param {event} - A mouse click event.
-   */
-  function onMouseClick(event) {
-
-    var items = pickInScene(event.clientX, event.clientY);
-
+  function select(items) {
     // reset last selected sprite
     while (selected.length > 0) {
       let item = selected.pop();
@@ -394,6 +409,21 @@ function MetAtlasViewer(targetElement) {
         });
 
     eventElement.dispatchEvent(selectEvent);
+  }
+
+  /**
+   * Mouse click callback which calls pickInScene to get the current object
+   * under the mouse cursor and colors it red.
+   *
+   * @param {event} - A mouse click event.
+   */
+  function onMouseClick(event) {
+
+    var items = pickInScene(event.clientX, event.clientY);
+
+    if (items.length > 0) {
+      select(items);
+    }
 
     // render the scene to make sure that it's updated
     requestAnimationFrame(render);
@@ -507,7 +537,9 @@ function MetAtlasViewer(targetElement) {
   // Return an interaction "controller" that we can use to control the scene.
   // Currently it's only used to access the setData and setCameraControls
   // functions.
-  return {setData: setData, setCameraControls: setCameraControls};
+  return {setData: setData,
+          setCameraControls: setCameraControls,
+          filterBy: filterBy};
 }
 
 export { MetAtlasViewer };
