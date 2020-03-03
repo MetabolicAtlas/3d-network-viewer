@@ -66,6 +66,8 @@ function MetAtlasViewer(targetElement) {
   var connectionEndColor = [0, 127, 0];
   var nodeSelectColor = [255, 0, 0];
   var connectionSelectColor = [255, 255, 0];
+  var hoverSelectColor = [255, 0, 255];
+  var hoverConnectionColor = [255, 0, 0];
 
   // Create the scene and set background
   var scene = new Scene();
@@ -90,6 +92,9 @@ function MetAtlasViewer(targetElement) {
 
   // Create a list to keep track of selected nodes.
   var selected = [];
+
+  // Create another reference to keep track of hover selected node
+  var hoverNode;
 
   // Create a texture loader for later
   const textureLoader = new TextureLoader();
@@ -363,39 +368,53 @@ function MetAtlasViewer(targetElement) {
     if (items.length == 0) {
       infoBox.style.visibility = 'hidden';
     }
+    select(items, false);
+    requestAnimationFrame(render);
   }
 
-  function select(items) {
-    // reset last selected sprite
-    while (selected.length > 0) {
-      let item = selected.pop();
-      setSpriteColor(item, [255, 255, 255]);
-      setConnectionsColor(item);
+  function select(items, persistent = true) {
+
+    if (persistent) {
+      // reset the currently persistently selected sprites
+      while (selected.length > 0) {
+        let item = selected.pop();
+        setSpriteColor(item);
+        setConnectionsColor(item);
+      }
+    } else if (hoverNode) {
+      setSpriteColor(hoverNode);
+      setConnectionsColor(hoverNode);
     }
 
     // save current selected ids
     items.forEach(id => {
-      selected.push(id);
+      if (persistent) {
+        selected.push(id);
+      } else {
+        hoverNode = id;
+      }
 
       // update selected if with red color
-      setSpriteColor(id, nodeSelectColor);
+      setSpriteColor(id, persistent ? nodeSelectColor : hoverSelectColor);
 
       // update selected connections with blue
-      setConnectionsColor(id, connectionSelectColor)
+      setConnectionsColor(id, persistent ? connectionSelectColor : hoverConnectionColor)
     });
 
-    // Create new selection event
-    let selectEvent = new CustomEvent(
-        "select",
-        {
-            detail: {
-              items: items.map(i => {return nodeInfo[i];})
-            },
-            bubbles: false,
-            cancelable: true
-        });
+    if (persistent) {
+      // Create new selection event
+      let selectEvent = new CustomEvent(
+          "select",
+          {
+              detail: {
+                items: items.map(i => {return nodeInfo[i];})
+              },
+              bubbles: false,
+              cancelable: true
+          });
 
-    eventElement.dispatchEvent(selectEvent);
+      eventElement.dispatchEvent(selectEvent);
+    }
   }
 
   /**
@@ -477,10 +496,11 @@ function MetAtlasViewer(targetElement) {
    * @param {number} spriteNum - id of the sprite in the nodemesh
    * @param {array} color - color to set the sprite to.
    */
-  function setSpriteColor(spriteNum, color) {
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = color[0];
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = color[1];
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = color[2];
+  function setSpriteColor(spriteNum, color = undefined) {
+    let c = color ? color : selected.includes(spriteNum) ? nodeSelectColor : nodeDefaultColor;
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = c[0];
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = c[1];
+    nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = c[2];
     nodeMesh.geometry.attributes.color.needsUpdate = true;
   }
 
@@ -494,23 +514,23 @@ function MetAtlasViewer(targetElement) {
   function setConnectionsColor(spriteNum, color = undefined) {
     let node = nodeInfo[spriteNum];
     node.connections.from.forEach(conn => {
-      let c = color ? color : connectionStartColor;
+      let c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionStartColor;
       connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
       connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
       connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
 
-      c = color ? color : connectionEndColor;
+      c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionEndColor;
       connectionMesh.geometry.attributes.color.array[conn.index*3+3] = c[0];
       connectionMesh.geometry.attributes.color.array[conn.index*3+4] = c[1];
       connectionMesh.geometry.attributes.color.array[conn.index*3+5] = c[2];
     });
     node.connections.to.forEach(conn => {
-      let c = color ? color : connectionStartColor;
+      let c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionStartColor;
       connectionMesh.geometry.attributes.color.array[conn.index*3-3] = c[0];
       connectionMesh.geometry.attributes.color.array[conn.index*3-2] = c[1];
       connectionMesh.geometry.attributes.color.array[conn.index*3-1] = c[2];
 
-      c = color ? color : connectionEndColor;
+      c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionEndColor;
       connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
       connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
       connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
