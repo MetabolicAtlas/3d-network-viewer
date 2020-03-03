@@ -208,6 +208,7 @@ function MetAtlasViewer(targetElement) {
       nodeIndex[node.id] = {pos: node.pos, index: i};
       // update info
       nodeInfo.push({id: node.id,
+                     pos: node.pos,
                      connections: {to:[], from:[]},
                      index: i,
                      group: node.g});
@@ -365,6 +366,24 @@ function MetAtlasViewer(targetElement) {
       return false;
     }).map(i => {return i.index});
     select(items);
+
+    // move camera to view items. Currently, this only supports single items.
+    let cameraDistance = 50;
+    if (items.length == 1) {
+      let p = {
+        x: nodeInfo[items[0]].pos[0],
+        y: nodeInfo[items[0]].pos[1],
+        z: nodeInfo[items[0]].pos[2]
+      };
+      let l = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+      let t = {
+        x: p.x + p.x/l * cameraDistance,
+        y: p.y + p.y/l * cameraDistance,
+        z: p.z + p.z/l * cameraDistance
+      };
+      setFlyTarget(t);
+    }
+
 
     // render the scene to make sure that it's updated
     requestAnimationFrame(render);
@@ -606,7 +625,7 @@ function MetAtlasViewer(targetElement) {
    * @param {*} up - target camera up vector
    * @param {*} target - target camera target
    */
-  function setFlyTarget(position, up, target) {
+  function setFlyTarget(position, up = {x:0, y:1, z:0}, target = {x:0, y:0, z:0}) {
     flyTarget.active = true;
     flyTarget.start = Object.assign({}, camera.position);
     flyTarget.startUp = Object.assign({}, camera.up);
