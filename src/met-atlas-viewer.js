@@ -61,6 +61,7 @@ function MetAtlasViewer(targetElement) {
   camera.position.z = 3000;
 
   // Set default colors
+  var nodeDefaultColor = [255,255,255];
   var connectionStartColor = [0, 127, 255];
   var connectionEndColor = [0, 127, 0];
   var nodeSelectColor = [255, 0, 0];
@@ -176,7 +177,7 @@ function MetAtlasViewer(targetElement) {
       } else {
         nodeGroups[node.g] += 1;
       }
-      nodeColors.push( 255, 255, 255 );
+      nodeColors.push.apply(nodeColors, nodeDefaultColor);
       indexColors.push(Math.floor(i/(256*256)),
                        Math.floor(i/256) % 256,
                        i % 256
