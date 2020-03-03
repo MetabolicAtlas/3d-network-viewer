@@ -38,7 +38,7 @@ import {
   Uint8BufferAttribute,
   VertexColors,
   WebGLRenderer,
-  WebGLRenderTarget
+  WebGLRenderTarget,
 } from 'three-js';
 
 import { AtlasViewerControls } from './atlas-viewer-controls';
@@ -59,6 +59,22 @@ function MetAtlasViewer(targetElement) {
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
+
+  var cameraDefault = {
+    position: Object.assign({}, camera.position),
+    up: Object.assign({}, camera.up),
+    target: Object.assign({}, camera.up)
+  };
+  var flyTarget = {
+    active: false,
+    start: undefined,
+    startUp: undefined,
+    end: undefined,
+    target: undefined,
+    startTime: undefined,
+    targetUp: undefined,
+    runTime: 250
+  };
 
   // Set default colors
   var nodeDefaultColor = [255,255,255];
@@ -123,6 +139,7 @@ function MetAtlasViewer(targetElement) {
   window.addEventListener('resize', onWindowResize, false);
   window.addEventListener('mousemove', onMouseMove, false);
   window.addEventListener('click', onMouseClick, false);
+  window.addEventListener('keypress', onKeypress, false);
 
   // Set a camera control placeholder
   var cameraControls;
@@ -436,6 +453,19 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Handles keypresses. Current controls:
+   *
+   *  - r: reset camera to start position.
+   *
+   * @param {*} event - A keypress event
+   */
+  function onKeypress(event) {
+    if (event.key == 'r') {
+      resetCamera();
+    }
+  }
+
+  /**
    * Does scene object picking by rendering the pixel at the mouse pointer,
    * converts its color to an index position and returns that id.
    *
@@ -553,6 +583,75 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Sets the camera to the absolute position given by `position`, using the
+   * up-vector `up`, and pointing at `target`.
+   *
+   * @param {*} position - new camera position
+   * @param {*} up - new camera up vector
+   * @param {*} target - new camera target
+   */
+  function setCamera(position, up, target) {
+    camera.position.copy(position);
+    camera.up.copy(up);
+    camera.lookAt(target)
+    requestAnimationFrame(render);
+  }
+
+  /**
+   * Sets the camera to fly towards being in the position given by `position`,
+   * the up-vector `up`, and pointing towards `target`. The duration for the
+   * transition is given by `flyTarget.runTime`.
+   *
+   * @param {*} position - target camera position
+   * @param {*} up - target camera up vector
+   * @param {*} target - target camera target
+   */
+  function setFlyTarget(position, up, target) {
+    flyTarget.active = true;
+    flyTarget.start = Object.assign({}, camera.position);
+    flyTarget.startUp = Object.assign({}, camera.up);
+    flyTarget.end = position;
+    flyTarget.target = target;
+    flyTarget.targetUp = up;
+    flyTarget.startTime = new Date().getTime();
+  }
+
+  /**
+   * Updates the camera with a new position given the time that's transpired
+   * between `flyTarget.startTime` and now. If the current time is greater than
+   * `flyTarget.startTime` + `flyTarget.runTime`, then the camera will be set to
+   * the `flyTarget.end` position, and `flyTarget.active` will be set to
+   * `false`.
+   */
+  function flyUpdate() {
+    let t = new Date().getTime();
+    if (t >= flyTarget.startTime + flyTarget.runTime) {
+      flyTarget.active = false;
+      setCamera(flyTarget.end, flyTarget.targetUp, flyTarget.target);
+    } else {
+      let p = (t - flyTarget.startTime)/flyTarget.runTime;
+      let p_t = {
+        x: flyTarget.start.x + (flyTarget.end.x - flyTarget.start.x)*p,
+        y: flyTarget.start.y + (flyTarget.end.y - flyTarget.start.y)*p,
+        z: flyTarget.start.z + (flyTarget.end.z - flyTarget.start.z)*p
+      };
+      let p_u = {
+        x: flyTarget.startUp.x + (flyTarget.targetUp.x - flyTarget.startUp.x)*p,
+        y: flyTarget.startUp.y + (flyTarget.targetUp.y - flyTarget.startUp.y)*p,
+        z: flyTarget.startUp.z + (flyTarget.targetUp.z - flyTarget.startUp.z)*p
+      };
+      setCamera(p_t, p_u, flyTarget.target);
+    }
+  }
+
+  /**
+   * Uses the SetFlyTarget function to reset the camera to the start-position.
+   */
+  function resetCamera() {
+    setFlyTarget(cameraDefault.position, cameraDefault.up, cameraDefault.target);
+  }
+
+  /**
    * Rendering function.
    */
   function render() {
@@ -565,6 +664,9 @@ function MetAtlasViewer(targetElement) {
    */
   function animate() {
     requestAnimationFrame(animate);
+    if (flyTarget.active) {
+      flyUpdate();
+    }
     if (cameraControls) {
       cameraControls.update();
     } else {
