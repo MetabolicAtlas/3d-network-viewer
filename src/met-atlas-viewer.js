@@ -60,6 +60,12 @@ function MetAtlasViewer(targetElement) {
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
 
+  // Set default colors
+  var connectionStartColor = [0, 127, 255];
+  var connectionEndColor = [0, 127, 0];
+  var nodeSelectColor = [255, 0, 0];
+  var connectionSelectColor = [255, 255, 0];
+
   // Create the scene and set background
   var scene = new Scene();
   scene.background = new Color( 0xdddddd );
@@ -72,8 +78,10 @@ function MetAtlasViewer(targetElement) {
   // Create object group for the graph
   var graph = new Group();
 
-  // Create nodeMesh as a global so that we can modify it later
+  // Create nodeMesh and connectionMesh as globals so that we can modify them
+  // later
   var nodeMesh;
+  var connectionMesh;
 
   // Create color and material arrays for the nodes
   var nodeColors = [];
@@ -228,17 +236,23 @@ function MetAtlasViewer(targetElement) {
       }
       // Start position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].s].pos);
-      lineColors.push( 0.0, 1.0, 0.0 );
+      lineColors.push.apply(lineColors, connectionStartColor );
 
       // End position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].t].pos);
-      lineColors.push( 0.0, 0.0, 1.0 );
+      lineColors.push.apply(lineColors, connectionEndColor );
 
       // Add connections to nodeInfo
       // to:
-      nodeInfo[nodeIndex[links[i].s].index].connections.to.push(links[i].t);
+      nodeInfo[nodeIndex[links[i].s].index].connections.to.push({
+        index: i*2+1,
+        neighbor: links[i].t
+        });
       // from:
-      nodeInfo[nodeIndex[links[i].t].index].connections.from.push(links[i].s)
+      nodeInfo[nodeIndex[links[i].t].index].connections.from.push({
+        index: i*2,
+        neighbor: links[i].s
+        })
     }
 
     // set line geometry attributes and mesh.
@@ -246,12 +260,12 @@ function MetAtlasViewer(targetElement) {
     lineGeometry.setAttribute('position',
                               new Float32BufferAttribute(linePositions, 3));
     lineGeometry.setAttribute('color',
-                              new Float32BufferAttribute(lineColors, 3));
+                              new Uint8BufferAttribute(lineColors, 3, true));
 
-    var lineMesh = new LineSegments(lineGeometry, lineMaterial);
+    connectionMesh = new LineSegments(lineGeometry, lineMaterial);
     // Add the lines to the graph group and set it to render first
-    graph.add(lineMesh);
-    lineMesh.renderOrder = 0;
+    graph.add(connectionMesh);
+    connectionMesh.renderOrder = 0;
 
     let promises = [];
     var nodeMaterials = [];
@@ -348,6 +362,7 @@ function MetAtlasViewer(targetElement) {
     while (selected.length > 0) {
       let item = selected.pop();
       setSpriteColor(item, [255, 255, 255]);
+      setConnectionsColor(item);
     }
 
     // save current selected ids
@@ -355,7 +370,10 @@ function MetAtlasViewer(targetElement) {
       selected.push(id);
 
       // update selected if with red color
-      setSpriteColor(id, [255,0,0]);
+      setSpriteColor(id, nodeSelectColor);
+
+      // update selected connections with blue
+      setConnectionsColor(id, connectionSelectColor)
     });
 
     // Create new selection event
@@ -456,6 +474,40 @@ function MetAtlasViewer(targetElement) {
     nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = color[1];
     nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = color[2];
     nodeMesh.geometry.attributes.color.needsUpdate = true;
+  }
+
+  /**
+   * Colors all connections of the sprite selected by `spriteNum`.
+   *
+   * @param {*} spriteNum - id of the sprite to have it's connections colored
+   * @param {*} color - (optional) color to set the connections to. If omitted,
+   *     the default connection colors will be used.
+   */
+  function setConnectionsColor(spriteNum, color = undefined) {
+    let node = nodeInfo[spriteNum];
+    node.connections.from.forEach(conn => {
+      let c = color ? color : connectionStartColor;
+      connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
+
+      c = color ? color : connectionEndColor;
+      connectionMesh.geometry.attributes.color.array[conn.index*3+3] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+4] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+5] = c[2];
+    });
+    node.connections.to.forEach(conn => {
+      let c = color ? color : connectionStartColor;
+      connectionMesh.geometry.attributes.color.array[conn.index*3-3] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index*3-2] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index*3-1] = c[2];
+
+      c = color ? color : connectionEndColor;
+      connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
+    });
+    connectionMesh.geometry.attributes.color.needsUpdate = true;
   }
 
   /**
