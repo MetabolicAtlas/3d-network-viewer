@@ -319,16 +319,23 @@ function MetAtlasViewer(targetElement) {
 
   }
 
-  function filterBy(filterString) {
-    for (let key of Object.keys(filterString)) {
-      if (!Array.isArray(filterString[key])) {
-        filterString[key] = Array(filterString[key]);
+  /**
+   * Selects nodes in the graph based on a filter.
+   *
+   * @param {*} filter - filter object, whose keys-value pairs will be compared
+   *     to the nodes. If a node has the same key-value pair it will be
+   *     selected.
+   */
+  function selectBy(filter) {
+    for (let key of Object.keys(filter)) {
+      if (!Array.isArray(filter[key])) {
+        filter[key] = [filter[key]];
       }
     }
 
     let items = nodeInfo.filter(v => {
-      for (const key of Object.keys(filterString)) {
-        if (filterString[key].includes(v[key])) {
+      for (const key of Object.keys(filter)) {
+        if (filter[key].includes(v[key])) {
           return true;
         }
       }
@@ -552,7 +559,7 @@ function MetAtlasViewer(targetElement) {
   // functions.
   return {setData: setData,
           setCameraControls: setCameraControls,
-          filterBy: filterBy};
+          selectBy: selectBy};
 }
 
 export { MetAtlasViewer };

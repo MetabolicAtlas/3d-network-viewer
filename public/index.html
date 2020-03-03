@@ -88,10 +88,19 @@
                                       {group:'m', sprite:'sprite_triangle.png'}
                                      ], 15);
 
+            // filter selection examples: (available after the graph has
+            // initialized)
+            //
+            // controller.filterBy({group: 'm'});
+            // controller.filterBy({id: [1, 2, 3, 4]});
+            //
+            // write a reference of the controller to the log for testing:
+            console.log("controller:", controller);
+
             // Subscribe to node selection events
             document.getElementById('viewer').addEventListener('select',
                 function($event) {
-                    console.debug($event.detail);
+                    console.debug("selected", $event.detail);
                 });
         </script>
     </body>
