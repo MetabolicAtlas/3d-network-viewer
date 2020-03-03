@@ -42,6 +42,7 @@ import {
 } from 'three-js';
 
 import { AtlasViewerControls } from './atlas-viewer-controls';
+import { makeIndexSprite } from './helpers';
 
 /**
  * Creates a rendering context for the Metabolic Atlas Viewer.
@@ -55,7 +56,7 @@ function MetAtlasViewer(targetElement) {
   let fieldOfView = 270;
   let aspect = window.innerWidth / window.innerHeight;
   let near = 1;
-  let far = 5000;
+  let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
 
@@ -76,9 +77,7 @@ function MetAtlasViewer(targetElement) {
 
   // Create color and material arrays for the nodes
   var nodeColors = [];
-  var nodeMaterials = [];
   var indexColors = [];
-  var indexMaterials = [];
 
   // Create a list to keep track of selected nodes.
   var selected = [];
@@ -184,9 +183,9 @@ function MetAtlasViewer(targetElement) {
     });
 
     // bind arrays to node geometry attributes
-    nodeGeometry.addAttribute('position',
+    nodeGeometry.setAttribute('position',
                               new Float32BufferAttribute(nodePositions, 3));
-    nodeGeometry.addAttribute('color',
+    nodeGeometry.setAttribute('color',
                               new Uint8BufferAttribute(nodeColors, 3, true));
     nodeGeometry.computeBoundingSphere();
 
@@ -200,9 +199,9 @@ function MetAtlasViewer(targetElement) {
     });
 
     // Set index geometry attributes
-    indexGeometry.addAttribute('position',
+    indexGeometry.setAttribute('position',
                                new Float32BufferAttribute(nodePositions, 3));
-    indexGeometry.addAttribute('color',
+    indexGeometry.setAttribute('color',
                                new Uint8BufferAttribute(indexColors, 3, true));
 
     // Create the link material and geometry
@@ -244,9 +243,9 @@ function MetAtlasViewer(targetElement) {
 
     // set line geometry attributes and mesh.
     var lineGeometry = new BufferGeometry();
-    lineGeometry.addAttribute('position',
+    lineGeometry.setAttribute('position',
                               new Float32BufferAttribute(linePositions, 3));
-    lineGeometry.addAttribute('color',
+    lineGeometry.setAttribute('color',
                               new Float32BufferAttribute(lineColors, 3));
 
     var lineMesh = new LineSegments(lineGeometry, lineMaterial);
@@ -254,10 +253,40 @@ function MetAtlasViewer(targetElement) {
     graph.add(lineMesh);
     lineMesh.renderOrder = 0;
 
-    let textures = [];
-    nodeTextures.forEach(tex => textures.push(loadTexture(tex.sprite, nodeSize)));
+    let promises = [];
+    var nodeMaterials = [];
+    var indexMaterials = [];
+    nodeTextures.forEach(tex => {
+      promises.push(new Promise(function (resolve, reject) {
+        var sprite = textureLoader.load(tex.sprite, function () {
+          nodeMaterials.push(new PointsMaterial({
+            size: nodeSize,
+            vertexColors: VertexColors,
+            map: sprite,
+            transparent: true,
+            depthTest: true,
+            alphaTest: 0.5
+          }));
 
-    Promise.all(textures).then(function() {
+          var indexSprite = textureLoader.load(makeIndexSprite(sprite));
+          indexSprite.magFilter = NearestFilter;
+          indexSprite.minFilter = NearestFilter;
+
+          indexMaterials.push(new PointsMaterial({
+            size: nodeSize,
+            vertexColors: VertexColors,
+            map: indexSprite,
+            transparent: true,
+            depthTest: true,
+            flatShading: true,
+            alphaTest: 0.5
+          }));
+          resolve("texture loaded");
+        });
+      }));
+    });
+
+    Promise.all(promises).then(function() {
       // All sprite materials are available here
 
       nodeMesh = new Points(nodeGeometry, nodeMaterials);
@@ -295,74 +324,6 @@ function MetAtlasViewer(targetElement) {
 
     // render the scene to make sure that it's updated
     requestAnimationFrame(render);
-  }
-
-  function loadTexture(filename, nodeSize = 20) {
-    return new Promise(function (resolve, reject) {
-
-      // The sprite texture needs to be loaded so that we can parse it to make
-      // the index sprite texture, which is why all this code is in callbacks.
-      var sprite = textureLoader.load(filename, function () {
-        nodeMaterials.push(new PointsMaterial({
-          size: nodeSize,
-          vertexColors: VertexColors,
-          map: sprite,
-          transparent: true,
-          depthTest: true,
-          alphaTest: 0.5
-        }));
-
-        var indexSprite = textureLoader.load(makeIndexSprite(sprite));
-        indexSprite.magFilter = NearestFilter;
-        indexSprite.minFilter = NearestFilter;
-
-        indexMaterials.push(new PointsMaterial({
-          size: nodeSize,
-          vertexColors: VertexColors,
-          map: indexSprite,
-          transparent: true,
-          depthTest: true,
-          flatShading: true,
-          alphaTest: 0.5
-        }));
-      });
-      resolve(`Loaded texture '${filename}'`);
-    });
-  }
-
-  /**
-   * Creates a blank white texture which has the approximate alpha channel of
-   * of the parameter texture. The alpha channel will be preserved but limited
-   * to 0 (if A<=128) or 255. This is in order to make sure that the index
-   * buffer has the exact colors that it should have.
-   *
-   * @param {Object} baseSprite - a Three-js sprite texture.
-   * @returns {string} The data url to the new sprite.
-   */
-  function makeIndexSprite(baseSprite) {
-    // bind sprite to a canvas so that we can interact with it
-    var canvas = document.createElement("canvas");
-    canvas.width = baseSprite.image.width;
-    canvas.height = baseSprite.image.height;
-
-    var ctx = canvas.getContext("2d");
-    ctx.drawImage(baseSprite.image, 0, 0);
-
-    // create a new sprite which is pure white and have the transparency of the
-    // original sprite (without antialiasing).
-    let dataSize = baseSprite.image.width*baseSprite.image.height*4;
-    var spriteData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (var i = 0; i <= dataSize; i+=4) {
-      spriteData.data[i] = 255;
-      spriteData.data[i + 1] = 255;
-      spriteData.data[i + 2] = 255;
-      spriteData.data[i + 3] = spriteData.data[i+3] <= 128 ? 0 : 255;
-    }
-    ctx.putImageData(spriteData, 0, 0);
-
-    // return the data url so that this function can be used with
-    // textureLoader.load().
-    return canvas.toDataURL();
   }
 
   /**
@@ -535,7 +496,7 @@ function MetAtlasViewer(targetElement) {
   animate();
 
   // Return an interaction "controller" that we can use to control the scene.
-  // Currently it's only used to access the setData and setCameraControls
+  // Currently it's used to access the setData, setCameraControls, and filterBy
   // functions.
   return {setData: setData,
           setCameraControls: setCameraControls,
