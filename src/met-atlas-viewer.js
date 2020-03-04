@@ -26,9 +26,11 @@ import {
   BufferGeometry,
   Color,
   Float32BufferAttribute,
+  Frustum,
   Group,
   LineBasicMaterial,
   LineSegments,
+  Matrix4,
   NearestFilter,
   PerspectiveCamera,
   Points,
@@ -53,7 +55,7 @@ import { makeIndexSprite } from './helpers';
  */
 function MetAtlasViewer(targetElement) {
   // Camera variables
-  let fieldOfView = 270;
+  let fieldOfView = 90;
   let aspect = window.innerWidth / window.innerHeight;
   let near = 1;
   let far = 10000;
@@ -73,7 +75,7 @@ function MetAtlasViewer(targetElement) {
     target: undefined,
     startTime: undefined,
     targetUp: undefined,
-    runTime: 250
+    runTime: 750
   };
 
   // Set default colors
@@ -367,26 +369,94 @@ function MetAtlasViewer(targetElement) {
     }).map(i => {return i.index});
     select(items);
 
-    // move camera to view items. Currently, this only supports single items.
-    let cameraDistance = 50;
-    if (items.length == 1) {
+    focusOnItems(items);
+
+    // render the scene to make sure that it's updated
+    requestAnimationFrame(render);
+  }
+
+  /**
+   * Given a lisf of nodes, `items`, this function will calculate the center
+   * point of the nodes, then set the camera to point along a vector from that
+   * point to the world center.
+   *
+   * The function will attempt to move the camera backwards along the vector
+   * until all items are inside the camera frustum.
+   */
+  function focusOnItems(items) {
+
+    // move camera to view items.
+    if (items.length > 0) {
+      let s = items.map(i => nodeInfo[i]).reduce((a,b) => {
+        return {x: a.x+b.pos[0], y:a.y+b.pos[1], z: a.z+b.pos[2]};},
+        {x:0,y:0,z:0}
+      );
       let p = {
-        x: nodeInfo[items[0]].pos[0],
-        y: nodeInfo[items[0]].pos[1],
-        z: nodeInfo[items[0]].pos[2]
+        x: s.x / items.length,
+        y: s.y / items.length,
+        z: s.z / items.length
       };
       let l = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+
+      let cameraDistance = 50; // default, for single items
+
       let t = {
         x: p.x + p.x/l * cameraDistance,
         y: p.y + p.y/l * cameraDistance,
         z: p.z + p.z/l * cameraDistance
       };
+
+      let cameraStep = 50;
+      let maxDistance = 3000 - l;
+      if (items.length > 1) {
+        // copy camera to move it around without having to mess with the scene,
+        // but make the FoV slightly narrower to make sure things are inside the
+        // visible portion of the view on the main camera.
+        let testCamera = new PerspectiveCamera(fieldOfView-10, aspect, near, far);
+        testCamera.position.copy(t);
+        testCamera.up.copy({x:0, y:1, z:0});
+        testCamera.lookAt(0,0,0);
+        testCamera.updateMatrix();
+        testCamera.updateMatrixWorld();
+        testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+
+        while (!isInCamera(items, testCamera) && cameraDistance < maxDistance) {
+          // move camera back until we've reached the max distance or we can see
+          // all object in the camera
+          cameraDistance += cameraStep;
+          t = {
+            x: p.x + p.x/l * cameraDistance,
+            y: p.y + p.y/l * cameraDistance,
+            z: p.z + p.z/l * cameraDistance
+          };
+          testCamera.position.copy(t);
+          testCamera.up.copy({x:0, y:1, z:0});
+          testCamera.lookAt(0,0,0);
+          testCamera.updateMatrix();
+          testCamera.updateMatrixWorld();
+          testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+        }
+      }
       setFlyTarget(t);
     }
+  }
 
-
-    // render the scene to make sure that it's updated
-    requestAnimationFrame(render);
+  /**
+   * Given a number of items and a camera, this function will return true if all
+   * items are inside the camera frustum.
+   *
+   * @param {*} items - A list of node id's
+   * @param {*} cam - The camera to test with
+   */
+  function isInCamera(items, cam) {
+    let retval = true;
+    let frustum = new Frustum();
+    frustum.setFromProjectionMatrix( new Matrix4().multiplyMatrices( cam.projectionMatrix, cam.matrixWorldInverse ) );
+    items.map(i => nodeInfo[i]).forEach(node => {
+      let pos = {x: node.pos[0], y: node.pos[1], z: node.pos[2]};
+      retval = retval && frustum.containsPoint(pos);
+    });
+    return retval;
   }
 
   /**
