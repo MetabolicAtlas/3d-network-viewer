@@ -558,6 +558,7 @@ function MetAtlasViewer(targetElement) {
    * Handles keypresses. Current controls:
    *
    *  - r: reset camera to start position.
+   *  - q: reset the selection
    *
    * @param {*} event - A keypress event
    */
@@ -757,6 +758,10 @@ function MetAtlasViewer(targetElement) {
     setFlyTarget(cameraDefault.position, cameraDefault.up, cameraDefault.target);
   }
 
+  /**
+   * Resets the list of selected nodes, and re-points the camera to the world
+   * center.
+   */
   function resetSelection() {
     select([]);
     cameraControls.target.copy({x:0, y:0, z:0});
