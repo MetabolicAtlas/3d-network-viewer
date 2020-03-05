@@ -45,7 +45,12 @@
                 let start = Date.now();
                 var data = {nodes:[], links: []};
                 for (var i = 0; i < numberOfNodes; i++) {
-                    data.nodes.push({id: i, pos: randomInSphere(radius),
+                    let pos = randomInSphere(radius);
+                    let color = [Math.floor(255*(pos[0]-radius)/(2*radius)),
+                                 Math.floor(255*(pos[1]-radius)/(2*radius)),
+                                 Math.floor(255*(pos[2]-radius)/(2*radius)),
+                                ];
+                    data.nodes.push({id: i, pos: pos, color: color,
                                      g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)]})
                     if (i > 0) {
                         if (!nice) {

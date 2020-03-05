@@ -190,8 +190,8 @@ function MetAtlasViewer(targetElement) {
     // Sort the materials as well so that the arrays match
     nodeTextures.sort((a,b) => a.group > b.group);
 
-    // Set node positions and colors, and set a unique color for each node. The
-    // index color will be used for selecting nodes in the scene.
+    // Set node positions and colors, and set a unique index color for each
+    // node. The index color will be used for selecting nodes in the scene.
     var nodePositions = [];
     var nodeGroups = {};
     nodes.forEach((node,i) => {
@@ -201,7 +201,8 @@ function MetAtlasViewer(targetElement) {
       } else {
         nodeGroups[node.g] += 1;
       }
-      nodeColors.push.apply(nodeColors, nodeDefaultColor);
+      let color = node.color ? node.color : nodeDefaultColor;
+      nodeColors.push.apply(nodeColors, color);
       indexColors.push(Math.floor(i/(256*256)),
                        Math.floor(i/256) % 256,
                        i % 256
@@ -211,6 +212,7 @@ function MetAtlasViewer(targetElement) {
       // update info
       nodeInfo.push({id: node.id,
                      pos: node.pos,
+                     color: node.color ? node.color : nodeDefaultColor,
                      connections: {to:[], from:[]},
                      index: i,
                      group: node.g});
@@ -634,7 +636,7 @@ function MetAtlasViewer(targetElement) {
    * @param {array} color - color to set the sprite to.
    */
   function setSpriteColor(spriteNum, color = undefined) {
-    let c = color ? color : selected.includes(spriteNum) ? nodeSelectColor : nodeDefaultColor;
+    let c = color ? color : selected.includes(spriteNum) ? nodeSelectColor : nodeInfo[spriteNum].color;
     nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = c[0];
     nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = c[1];
     nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = c[2];
