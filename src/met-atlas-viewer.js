@@ -697,7 +697,7 @@ function MetAtlasViewer(targetElement) {
   function setCamera(position, up, target) {
     camera.position.copy(position);
     camera.up.copy(up);
-    camera.lookAt(target)
+    cameraControls.target.copy(target)
     requestAnimationFrame(render);
   }
 
