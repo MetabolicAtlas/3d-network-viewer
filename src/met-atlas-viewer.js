@@ -140,7 +140,7 @@ function MetAtlasViewer(targetElement) {
   // Add window resize listener and mouse listener
   window.addEventListener('resize', onWindowResize, false);
   window.addEventListener('mousemove', onMouseMove, false);
-  window.addEventListener('click', onMouseClick, false);
+  window.addEventListener('pointerdown', onMouseClick, false);
   window.addEventListener('keypress', onKeypress, false);
 
   // Set a camera control placeholder
