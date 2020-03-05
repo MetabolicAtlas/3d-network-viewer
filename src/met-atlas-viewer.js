@@ -464,7 +464,7 @@ function MetAtlasViewer(targetElement) {
    * @param {event} event - A mouse move event
    */
   function onMouseMove(event) {
-    var items = pickInScene(event.clientX, event.clientY);
+    var items = pickInScene(event);
     items.forEach(id => {
       infoBox.style.top = (event.clientY+5).toString() + "px";
       infoBox.style.left = (event.clientX+5).toString() + "px";
@@ -531,7 +531,7 @@ function MetAtlasViewer(targetElement) {
    */
   function onMouseClick(event) {
 
-    var items = pickInScene(event.clientX, event.clientY);
+    var items = pickInScene(event);
 
     if (items.length > 0) {
       select(items);
@@ -558,11 +558,13 @@ function MetAtlasViewer(targetElement) {
    * Does scene object picking by rendering the pixel at the mouse pointer,
    * converts its color to an index position and returns that id.
    *
-   * @param {*} posX - X-position to pick in the scene.
-   * @param {*} posY - Y-position to pick in the scene.
+   * @param {*} event - An event containing mouse coordinates.
    * @returns {number} ID number of the picked object.
    */
-  function pickInScene(posX, posY) {
+  function pickInScene(event) {
+    let size = renderer.domElement.getBoundingClientRect();
+    var posX = event.clientX-size.x;
+    var posY = event.clientY-size.y;
 
     // set the camera to only render the pixel under the cursor.
     camera.setViewOffset(renderer.domElement.width,
