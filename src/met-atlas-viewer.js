@@ -227,8 +227,8 @@ function MetAtlasViewer(targetElement) {
     // Set material groups
     nodeTextures.forEach(function(texture, i) {
       let current = nodeGroups[texture.group];
-      nodeGeometry.addGroup(last, (last + current), i);
-      indexGeometry.addGroup(last,(last + current), i);
+      nodeGeometry.addGroup(last, current, i);
+      indexGeometry.addGroup(last, current, i);
       last += current;
     });
 
