@@ -564,6 +564,8 @@ function MetAtlasViewer(targetElement) {
   function onKeypress(event) {
     if (event.key == 'r') {
       resetCamera();
+    } else if (event.key == 'q') {
+      resetSelection();
     }
   }
 
@@ -753,6 +755,12 @@ function MetAtlasViewer(targetElement) {
    */
   function resetCamera() {
     setFlyTarget(cameraDefault.position, cameraDefault.up, cameraDefault.target);
+  }
+
+  function resetSelection() {
+    select([]);
+    cameraControls.target.copy({x:0, y:0, z:0});
+    requestAnimationFrame(render);
   }
 
   /**
