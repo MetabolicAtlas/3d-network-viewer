@@ -37,8 +37,8 @@ var AtlasViewerControls = function( object, domElement ) {
     this.staticMoving = false;
     this.dynamicDampingFactor = 0.2;
 
-    this.minDistance = 0;
-    this.maxDistance = Infinity;
+    this.minDistance = 50;
+    this.maxDistance = 5000;
 
     this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/ ];
 
