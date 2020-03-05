@@ -387,15 +387,7 @@ function MetAtlasViewer(targetElement) {
 
     // move camera to view items.
     if (items.length > 0) {
-      let s = items.map(i => nodeInfo[i]).reduce((a,b) => {
-        return {x: a.x+b.pos[0], y:a.y+b.pos[1], z: a.z+b.pos[2]};},
-        {x:0,y:0,z:0}
-      );
-      let p = {
-        x: s.x / items.length,
-        y: s.y / items.length,
-        z: s.z / items.length
-      };
+      let p = midPoint(items)
       let l = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 
       let cameraDistance = 50; // default, for single items
@@ -439,6 +431,23 @@ function MetAtlasViewer(targetElement) {
       }
       setFlyTarget(t);
     }
+  }
+
+  /**
+   * returns the midpoints given a list of node index numbers.
+   *
+   * @param {*} items Items to get midpoint for
+   */
+  function midPoint(items) {
+    let s = items.map(i => nodeInfo[i]).reduce((a,b) => {
+      return {x: a.x+b.pos[0], y:a.y+b.pos[1], z: a.z+b.pos[2]};},
+      {x:0,y:0,z:0}
+    );
+    return {
+      x: s.x / items.length,
+      y: s.y / items.length,
+      z: s.z / items.length
+    };
   }
 
   /**
@@ -508,6 +517,10 @@ function MetAtlasViewer(targetElement) {
     });
 
     if (persistent) {
+      // focus camera on midpoint
+      let m = midPoint(items);
+      cameraControls.target.copy(m);
+
       // Create new selection event
       let selectEvent = new CustomEvent(
           "select",
