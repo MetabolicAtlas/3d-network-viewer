@@ -124,7 +124,6 @@ function MetAtlasViewer(targetElement) {
 
   // Create renderer
   var renderer = new WebGLRenderer();
-  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   // Add the renderer to the target element
@@ -617,14 +616,15 @@ function MetAtlasViewer(targetElement) {
    */
   function pickInScene(event) {
     let size = renderer.domElement.getBoundingClientRect();
+    let dpr = window.devicePixelRatio || 1;
     var posX = event.clientX-size.x;
     var posY = event.clientY-size.y;
 
     // set the camera to only render the pixel under the cursor.
     camera.setViewOffset(renderer.domElement.width,
       renderer.domElement.height,
-      posX * window.devicePixelRatio,
-      posY * window.devicePixelRatio,
+      posX * dpr,
+      posY * dpr,
       1,
       1);
 
@@ -636,7 +636,7 @@ function MetAtlasViewer(targetElement) {
 
     renderer.readRenderTargetPixels(indexTarget, 0, 0, 1, 1, pixelBuffer);
     // check if the color is white (background)
-    if (pixelBuffer[2] == pixelBuffer[1] == pixelBuffer[1] == 255) {
+    if (pixelBuffer[2] == pixelBuffer[1] == pixelBuffer[0] == 255) {
       return;
     }
     var id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
@@ -880,6 +880,7 @@ function MetAtlasViewer(targetElement) {
    * Rendering function.
    */
   function render() {
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.render( scene, camera );
     if (showLabels) {
       let nodes = getNodesWithin(labelDistance);
