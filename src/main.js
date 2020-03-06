@@ -21,7 +21,4 @@
  * @author Martin Norling
  */
 
-import * as THREE from 'three-js';
-
 export { MetAtlasViewer } from './met-atlas-viewer.js';
-export { THREE };
