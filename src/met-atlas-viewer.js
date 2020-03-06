@@ -43,6 +43,11 @@ import {
   WebGLRenderTarget,
 } from 'three-js';
 
+import {
+  CSS2DObject,
+  CSS2DRenderer,
+} from './CSS2DRenderer';
+
 import { AtlasViewerControls } from './atlas-viewer-controls';
 import { makeIndexSprite } from './helpers';
 
@@ -111,7 +116,7 @@ function MetAtlasViewer(targetElement) {
   // Create a list to keep track of selected nodes.
   var selected = [];
 
-  // Create another reference to keep track of hover selected node
+  // Create another reference to keep track of hover-selected node
   var hoverNode;
 
   // Create a texture loader for later
@@ -124,6 +129,21 @@ function MetAtlasViewer(targetElement) {
 
   // Add the renderer to the target element
   document.getElementById(targetElement).appendChild(renderer.domElement);
+
+  // Add a label-renderer for node labels
+  var labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize( window.innerWidth, window.innerHeight );
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
+  document.getElementById(targetElement).appendChild(labelRenderer.domElement);
+
+  var labels = new Group();
+  graph.add( labels );
+
+  // and label controls
+  var showLabels = true;
+  var labelDistance = 200;
 
   // Create a div to use for node mouseover information
   var infoBox = document.createElement('div');
@@ -159,7 +179,8 @@ function MetAtlasViewer(targetElement) {
    * Sets the graph data to display in the viewer.
    *
    * The data should be formatted as:
-   * nodes = [{id: <node ID>, pos: (<x-pos>, <y-pos>, <z-pos>),
+   * nodes = [{id: <node ID>, pos: (<x-pos>, <y-pos>, <z-pos>), g: <group>,
+   *           (optional) color: [<r>, <g>, <b>],
    *           ...
    *          ]
    * links = [{s: <node ID>, t: <node ID>},
@@ -209,14 +230,27 @@ function MetAtlasViewer(targetElement) {
                       );
       // update index
       nodeIndex[node.id] = {pos: node.pos, index: i};
+
+      // create a label div for the node
+      let text = document.createElement( 'div' );
+      text.className = 'label';
+      text.textContent = node.id;
+      text.style.marginTop = '-1em';
+      text.style.padding = '5px';
+      text.style.background = "rgba(255,255,255,0.25)";
+      var label = new CSS2DObject( text );
+      label.position.copy( {x: node.pos[0], y: node.pos[1], z: node.pos[2]} );
+
       // update info
       nodeInfo.push({id: node.id,
-                     pos: node.pos,
-                     color: node.color ? node.color : nodeDefaultColor,
-                     connections: {to:[], from:[]},
-                     index: i,
-                     group: node.g});
+        pos: node.pos,
+        color: node.color ? node.color : nodeDefaultColor,
+        connections: {to:[], from:[]},
+        index: i,
+        label: label,
+        group: node.g});
     });
+    scene.add( labels );
 
     // bind arrays to node geometry attributes
     nodeGeometry.setAttribute('position',
@@ -569,6 +603,8 @@ function MetAtlasViewer(targetElement) {
       resetCamera();
     } else if (event.key == 'q') {
       resetSelection();
+    } else if (event.key == 'l') {
+      toggleLabels();
     }
   }
 
@@ -771,10 +807,88 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Toggles showing node labels;
+   */
+  function toggleLabels() {
+    if (showLabels) {
+      clearLabels();
+    }
+    showLabels = !showLabels;
+    requestAnimationFrame(render);
+  }
+
+  /**
+   * Sets the distance to show node labels.
+   *
+   * @param {number} newDistance The new label rendering distance
+   */
+  function setLabelDistance(newDistance) {
+    labelDistance = newDistance
+    requestAnimationFrame(render);
+  }
+
+  /**
+   * Returns a list of all nodes within the given `distance` from the camera.
+   */
+  function getNodesWithin(distance) {
+    let nodes = [];
+
+    let testCamera = new PerspectiveCamera(fieldOfView, aspect, near, distance);
+    testCamera.position.copy(camera.position);
+    testCamera.up.copy(camera.up);
+    testCamera.lookAt(cameraControls.target);
+    testCamera.updateMatrix();
+    testCamera.updateMatrixWorld();
+    testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+
+    let frustum = new Frustum();
+    frustum.setFromProjectionMatrix(
+      new Matrix4().multiplyMatrices(
+        testCamera.projectionMatrix,
+        testCamera.matrixWorldInverse
+      )
+    );
+    nodeInfo.forEach((node,i) => {
+      let p = {x: node.pos[0], y: node.pos[1], z: node.pos[2]};
+      if (frustum.containsPoint(p)) {
+        nodes.push(i)
+      }
+    });
+
+    return nodes;
+  }
+
+  /**
+   * Removes all labels from the scene
+   */
+  function clearLabels() {
+    while(labels.children.length > 0) {
+      labels.remove(labels.children[0]);
+    }
+  }
+
+  /**
+   * Adds a node label back into the scene.
+   *
+   * @param {number} node node index of the node to label
+   */
+  function labelNode(node) {
+    labels.add( nodeInfo[node].label );
+  }
+
+  /**
    * Rendering function.
    */
   function render() {
     renderer.render( scene, camera );
+    if (showLabels) {
+      let nodes = getNodesWithin(labelDistance);
+      clearLabels();
+      nodes.forEach(node => {
+        labelNode(node);
+      });
+      labelRenderer.render( scene, camera );
+    }
   }
 
   /**
@@ -801,7 +915,9 @@ function MetAtlasViewer(targetElement) {
   // functions.
   return {setData: setData,
           setCameraControls: setCameraControls,
-          selectBy: selectBy};
+          selectBy: selectBy,
+          toggleLabels: toggleLabels,
+          setLabelDistance: setLabelDistance};
 }
 
 export { MetAtlasViewer };
