@@ -41,7 +41,7 @@ import {
   VertexColors,
   WebGLRenderer,
   WebGLRenderTarget,
-} from 'three-js';
+} from 'three';
 
 import {
   CSS2DObject,

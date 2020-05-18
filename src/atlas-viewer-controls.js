@@ -10,7 +10,7 @@ import {
     Vector2,
     Vector3,
     Quaternion
-} from 'three-js';
+} from 'three';
 
 var AtlasViewerControls = function( object, domElement ) {
 

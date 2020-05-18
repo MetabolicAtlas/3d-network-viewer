@@ -6,7 +6,7 @@ import {
 	Matrix4,
 	Object3D,
 	Vector3
-} from "three-js";
+} from "three";
 
 var CSS2DObject = function ( element ) {
 
