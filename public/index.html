@@ -21,6 +21,10 @@
                 left: 85px;
                 font-family: 'Courier New', Courier, monospace;
             }
+            .atlas-viewer {
+                padding: 0;
+                margin: 0;
+            }
         </style>
     </head>
     <body>
@@ -42,7 +46,13 @@
                 let start = Date.now();
                 var data = {nodes:[], links: []};
                 for (var i = 0; i < numberOfNodes; i++) {
-                    data.nodes.push({id: i, pos: randomInSphere(radius)})
+                    let pos = randomInSphere(radius);
+                    let color = [Math.floor(255*(pos[0]-radius)/(2*radius)),
+                                 Math.floor(255*(pos[1]-radius)/(2*radius)),
+                                 Math.floor(255*(pos[2]-radius)/(2*radius)),
+                                ];
+                    data.nodes.push({id: i, pos: pos, color: color,
+                                     g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)]})
                     if (i > 0) {
                         if (!nice) {
                             data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
@@ -79,7 +89,25 @@
             );
 
             let data = makeData(5000);
-            controller.setData(data, "node_sprite.png");
+            controller.setData(data, [{group:'e', sprite:'sprite_round.png'},
+                                      {group:'r', sprite:'sprite_square.png'},
+                                      {group:'m', sprite:'sprite_triangle.png'}
+                                     ], 15);
+
+            // filter selection examples: (available after the graph has
+            // initialized)
+            //
+            // controller.filterBy({group: 'm'});
+            // controller.filterBy({id: [1, 2, 3, 4]});
+            //
+            // write a reference of the controller to the log for testing:
+            console.log("controller:", controller);
+
+            // Subscribe to node selection events
+            document.getElementById('viewer').addEventListener('select',
+                function($event) {
+                    console.debug("selected", $event.detail);
+                });
         </script>
     </body>
 </html>

@@ -11,5 +11,5 @@ personal/
 *.psd
 
 # build files
-build/
+build/*.js
 public/met-atlas-viewer.js
