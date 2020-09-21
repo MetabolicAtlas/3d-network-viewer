@@ -59,9 +59,12 @@ import { makeIndexSprite } from './helpers';
  * @returns {Object} A control object with functions for controlling the viewer.
  */
 function MetAtlasViewer(targetElement) {
+  const container = document.getElementById(targetElement)
+
   // Camera variables
   let fieldOfView = 90;
-  let aspect = window.innerWidth / window.innerHeight;
+  let aspect = container.offsetWidth / container.offsetHeight;
+  console.log(container, container.offsetWidth, container.offsetHeight, aspect);
   let near = 1;
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
@@ -125,18 +128,18 @@ function MetAtlasViewer(targetElement) {
 
   // Create renderer
   var renderer = new WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(container.offsetWidth, container.offsetHeight);
 
   // Add the renderer to the target element
-  document.getElementById(targetElement).appendChild(renderer.domElement);
+  container.appendChild(renderer.domElement);
 
   // Add a label-renderer for node labels
   var labelRenderer = new CSS2DRenderer();
-  labelRenderer.setSize( window.innerWidth, window.innerHeight );
+  labelRenderer.setSize( container.offsetWidth, container.offsetHeight );
   labelRenderer.domElement.style.position = 'absolute';
   labelRenderer.domElement.style.top = '0';
   labelRenderer.domElement.style.pointerEvents = 'none';
-  document.getElementById(targetElement).appendChild(labelRenderer.domElement);
+  container.appendChild(labelRenderer.domElement);
 
   var labels = new Group();
   graph.add( labels );
@@ -155,7 +158,7 @@ function MetAtlasViewer(targetElement) {
   infoBox.style.padding = '10px';
   infoBox.style.borderRadius = '5px';
   infoBox.style.border = '1px solid rgba(0,0,0,0.6)';
-  document.getElementById(targetElement).appendChild(infoBox);
+  container.appendChild(infoBox);
 
   // Add window resize listener and mouse listener
   window.addEventListener('resize', onWindowResize, false);
@@ -165,9 +168,6 @@ function MetAtlasViewer(targetElement) {
 
   // Set a camera control placeholder
   var cameraControls;
-
-  // Get the target DOM element for generating events
-  var eventElement = document.getElementById(targetElement);
 
   // holds information to connect nodes to graph id's
   var nodeInfo = [];
@@ -568,7 +568,7 @@ function MetAtlasViewer(targetElement) {
               cancelable: true
           });
 
-      eventElement.dispatchEvent(selectEvent);
+      container.dispatchEvent(selectEvent);
     }
   }
 
@@ -722,9 +722,9 @@ function MetAtlasViewer(targetElement) {
    * window size.
    */
   function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( container.offsetWidth, container.offsetHeight );
     if (cameraControls) {
       cameraControls.handleResize();
     }
