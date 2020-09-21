@@ -205,10 +205,10 @@ function MetAtlasViewer(targetElement) {
 
     // Sort the vertex positions by group, so that we can set the materials
     // properly
-    nodes.sort((a,b) => a.g > b.g);
+    nodes.sort((a,b) => a.g.localeCompare(b.g));
 
     // Sort the materials as well so that the arrays match
-    nodeTextures.sort((a,b) => a.group > b.group);
+    nodeTextures.sort((a,b) => a.group.localeCompare(b.group));
 
     // Set node positions and colors, and set a unique index color for each
     // node. The index color will be used for selecting nodes in the scene.
