@@ -22,6 +22,8 @@
                 font-family: 'Courier New', Courier, monospace;
             }
             .atlas-viewer {
+                width: 100%;
+                height: 100%;
                 padding: 0;
                 margin: 0;
             }
@@ -93,6 +95,14 @@
                                       {group:'r', sprite:'sprite_square.png'},
                                       {group:'m', sprite:'sprite_triangle.png'}
                                      ], 15);
+            controller.setColors({
+                nodeSelectColor: [255, 99, 71]
+            });
+            controller.setNodeSelectCallback((node) => {
+                console.log('node clicked');
+                console.log(node);
+                // controller.centerNode(node);
+            });
 
             // filter selection examples: (available after the graph has
             // initialized)
