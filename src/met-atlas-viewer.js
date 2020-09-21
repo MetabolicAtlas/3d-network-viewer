@@ -64,7 +64,6 @@ function MetAtlasViewer(targetElement) {
   // Camera variables
   let fieldOfView = 90;
   let aspect = container.offsetWidth / container.offsetHeight;
-  console.log(container, container.offsetWidth, container.offsetHeight, aspect);
   let near = 1;
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
@@ -382,6 +381,52 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Sets the default colors
+   *
+   * @param {*} colors - colors objects
+   * value should be array of 3 integers to represent RGB
+   * valid keys:
+   * - nodeDefaultColor
+   * - connectionStartColor
+   * - connectionEndColor
+   * - nodeSelectColor
+   * - connectionSelectColor
+   * - hoverSelectColor
+   * - hoverConnectionColor
+   */
+  function setColors(colors) {
+    const keys = Object.keys(colors);
+
+    if (keys.includes('nodeDefaultColor')) {
+      nodeDefaultColor = colors.nodeDefaultColor;
+    }
+
+    if (keys.includes('connectionStartColor')) {
+      connectionStartColor = colors.connectionStartColor;
+    }
+
+    if (keys.includes('connectionEndColor')) {
+      connectionEndColor = colors.connectionEndColor;
+    }
+
+    if (keys.includes('nodeSelectColor')) {
+      nodeSelectColor = colors.nodeSelectColor;
+    }
+
+    if (keys.includes('connectionSelectColor')) {
+      connectionSelectColor = colors.connectionSelectColor;
+    }
+
+    if (keys.includes('hoverSelectColor')) {
+      hoverSelectColor = colors.hoverSelectColor;
+    }
+
+    if (keys.includes('hoverConnectionColor')) {
+      hoverConnectionColor = colors.hoverConnectionColor;
+    }
+  }
+
+  /**
    * Selects nodes in the graph based on a filter.
    *
    * @param {*} filter - filter object, whose keys-value pairs will be compared
@@ -553,9 +598,9 @@ function MetAtlasViewer(targetElement) {
     });
 
     if (persistent) {
-      // focus camera on midpoint
-      let m = midPoint(items);
-      cameraControls.target.copy(m);
+      // // focus camera on midpoint
+      // let m = midPoint(items);
+      // cameraControls.target.copy(m);
 
       // Create new selection event
       let selectEvent = new CustomEvent(
@@ -583,7 +628,7 @@ function MetAtlasViewer(targetElement) {
     var items = pickInScene(event);
 
     if (items.length > 0) {
-      select(items, false);
+      select(items);
       if (nodeSelectCallback && items.length === 1) {
         nodeSelectCallback(nodeInfo[items[0]]);
       }
@@ -923,15 +968,25 @@ function MetAtlasViewer(targetElement) {
     nodeSelectCallback = callback;
   }
 
+  /**
+   * Centers camera on a node
+   */
+  function centerNode(node) {
+    let m = midPoint([node.index]);
+    cameraControls.target.copy(m);
+  }
+
   // Return an interaction "controller" that we can use to control the scene.
   // Currently it's used to access the setData, setCameraControls, and filterBy
   // functions.
-  return {setData: setData,
-          setCameraControls: setCameraControls,
+  return {centerNode: centerNode,
           selectBy: selectBy,
-          toggleLabels: toggleLabels,
+          setCameraControls: setCameraControls,
+          setColors: setColors,
+          setData: setData,
           setNodeSelectCallback: setNodeSelectCallback,
-          setLabelDistance: setLabelDistance};
+          setLabelDistance: setLabelDistance,
+          toggleLabels: toggleLabels};
 }
 
 export { MetAtlasViewer };
