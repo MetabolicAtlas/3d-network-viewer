@@ -66,6 +66,7 @@ function MetAtlasViewer(targetElement) {
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
+  let nodeSelectCallback;
 
   var cameraDefault = {
     position: Object.assign({}, camera.position),
@@ -582,7 +583,10 @@ function MetAtlasViewer(targetElement) {
     var items = pickInScene(event);
 
     if (items.length > 0) {
-      select(items);
+      select(items, false);
+      if (nodeSelectCallback && items.length === 1) {
+        nodeSelectCallback(nodeInfo[items[0]]);
+      }
     }
 
     // render the scene to make sure that it's updated
@@ -911,6 +915,14 @@ function MetAtlasViewer(targetElement) {
   // Start the rendering cycle
   animate();
 
+  /**
+   * Bind callback for when a single node is clicked,
+   * used in the onMouseClick function.
+   */
+  function setNodeSelectCallback(callback) {
+    nodeSelectCallback = callback;
+  }
+
   // Return an interaction "controller" that we can use to control the scene.
   // Currently it's used to access the setData, setCameraControls, and filterBy
   // functions.
@@ -918,6 +930,7 @@ function MetAtlasViewer(targetElement) {
           setCameraControls: setCameraControls,
           selectBy: selectBy,
           toggleLabels: toggleLabels,
+          setNodeSelectCallback: setNodeSelectCallback,
           setLabelDistance: setLabelDistance};
 }
 

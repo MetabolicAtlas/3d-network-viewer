@@ -93,6 +93,10 @@
                                       {group:'r', sprite:'sprite_square.png'},
                                       {group:'m', sprite:'sprite_triangle.png'}
                                      ], 15);
+            controller.setNodeSelectCallback((node) => {
+                console.log('node clicked');
+                console.log(node);
+            });
 
             // filter selection examples: (available after the graph has
             // initialized)
