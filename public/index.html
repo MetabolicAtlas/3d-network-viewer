@@ -95,6 +95,9 @@
                                       {group:'r', sprite:'sprite_square.png'},
                                       {group:'m', sprite:'sprite_triangle.png'}
                                      ], 15);
+            controller.setColors({
+                nodeSelectColor: [255, 99, 71]
+            });
             controller.setNodeSelectCallback((node) => {
                 console.log('node clicked');
                 console.log(node);
