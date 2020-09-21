@@ -59,13 +59,16 @@ import { makeIndexSprite } from './helpers';
  * @returns {Object} A control object with functions for controlling the viewer.
  */
 function MetAtlasViewer(targetElement) {
+  const container = document.getElementById(targetElement)
+
   // Camera variables
   let fieldOfView = 90;
-  let aspect = window.innerWidth / window.innerHeight;
+  let aspect = container.offsetWidth / container.offsetHeight;
   let near = 1;
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
+  let nodeSelectCallback;
 
   var cameraDefault = {
     position: Object.assign({}, camera.position),
@@ -124,18 +127,18 @@ function MetAtlasViewer(targetElement) {
 
   // Create renderer
   var renderer = new WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(container.offsetWidth, container.offsetHeight);
 
   // Add the renderer to the target element
-  document.getElementById(targetElement).appendChild(renderer.domElement);
+  container.appendChild(renderer.domElement);
 
   // Add a label-renderer for node labels
   var labelRenderer = new CSS2DRenderer();
-  labelRenderer.setSize( window.innerWidth, window.innerHeight );
+  labelRenderer.setSize( container.offsetWidth, container.offsetHeight );
   labelRenderer.domElement.style.position = 'absolute';
   labelRenderer.domElement.style.top = '0';
   labelRenderer.domElement.style.pointerEvents = 'none';
-  document.getElementById(targetElement).appendChild(labelRenderer.domElement);
+  container.appendChild(labelRenderer.domElement);
 
   var labels = new Group();
   graph.add( labels );
@@ -154,7 +157,7 @@ function MetAtlasViewer(targetElement) {
   infoBox.style.padding = '10px';
   infoBox.style.borderRadius = '5px';
   infoBox.style.border = '1px solid rgba(0,0,0,0.6)';
-  document.getElementById(targetElement).appendChild(infoBox);
+  container.appendChild(infoBox);
 
   // Add window resize listener and mouse listener
   window.addEventListener('resize', onWindowResize, false);
@@ -164,9 +167,6 @@ function MetAtlasViewer(targetElement) {
 
   // Set a camera control placeholder
   var cameraControls;
-
-  // Get the target DOM element for generating events
-  var eventElement = document.getElementById(targetElement);
 
   // holds information to connect nodes to graph id's
   var nodeInfo = [];
@@ -381,6 +381,52 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Sets the default colors
+   *
+   * @param {*} colors - colors objects
+   * value should be array of 3 integers to represent RGB
+   * valid keys:
+   * - nodeDefaultColor
+   * - connectionStartColor
+   * - connectionEndColor
+   * - nodeSelectColor
+   * - connectionSelectColor
+   * - hoverSelectColor
+   * - hoverConnectionColor
+   */
+  function setColors(colors) {
+    const keys = Object.keys(colors);
+
+    if (keys.includes('nodeDefaultColor')) {
+      nodeDefaultColor = colors.nodeDefaultColor;
+    }
+
+    if (keys.includes('connectionStartColor')) {
+      connectionStartColor = colors.connectionStartColor;
+    }
+
+    if (keys.includes('connectionEndColor')) {
+      connectionEndColor = colors.connectionEndColor;
+    }
+
+    if (keys.includes('nodeSelectColor')) {
+      nodeSelectColor = colors.nodeSelectColor;
+    }
+
+    if (keys.includes('connectionSelectColor')) {
+      connectionSelectColor = colors.connectionSelectColor;
+    }
+
+    if (keys.includes('hoverSelectColor')) {
+      hoverSelectColor = colors.hoverSelectColor;
+    }
+
+    if (keys.includes('hoverConnectionColor')) {
+      hoverConnectionColor = colors.hoverConnectionColor;
+    }
+  }
+
+  /**
    * Selects nodes in the graph based on a filter.
    *
    * @param {*} filter - filter object, whose keys-value pairs will be compared
@@ -552,9 +598,9 @@ function MetAtlasViewer(targetElement) {
     });
 
     if (persistent) {
-      // focus camera on midpoint
-      let m = midPoint(items);
-      cameraControls.target.copy(m);
+      // // focus camera on midpoint
+      // let m = midPoint(items);
+      // cameraControls.target.copy(m);
 
       // Create new selection event
       let selectEvent = new CustomEvent(
@@ -567,7 +613,7 @@ function MetAtlasViewer(targetElement) {
               cancelable: true
           });
 
-      eventElement.dispatchEvent(selectEvent);
+      container.dispatchEvent(selectEvent);
     }
   }
 
@@ -583,6 +629,9 @@ function MetAtlasViewer(targetElement) {
 
     if (items.length > 0) {
       select(items);
+      if (nodeSelectCallback && items.length === 1) {
+        nodeSelectCallback(nodeInfo[items[0]]);
+      }
     }
 
     // render the scene to make sure that it's updated
@@ -718,9 +767,9 @@ function MetAtlasViewer(targetElement) {
    * window size.
    */
   function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = container.offsetWidth / container.offsetHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( container.offsetWidth, container.offsetHeight );
     if (cameraControls) {
       cameraControls.handleResize();
     }
@@ -911,14 +960,33 @@ function MetAtlasViewer(targetElement) {
   // Start the rendering cycle
   animate();
 
+  /**
+   * Bind callback for when a single node is clicked,
+   * used in the onMouseClick function.
+   */
+  function setNodeSelectCallback(callback) {
+    nodeSelectCallback = callback;
+  }
+
+  /**
+   * Centers camera on a node
+   */
+  function centerNode(node) {
+    let m = midPoint([node.index]);
+    cameraControls.target.copy(m);
+  }
+
   // Return an interaction "controller" that we can use to control the scene.
   // Currently it's used to access the setData, setCameraControls, and filterBy
   // functions.
-  return {setData: setData,
-          setCameraControls: setCameraControls,
+  return {centerNode: centerNode,
           selectBy: selectBy,
-          toggleLabels: toggleLabels,
-          setLabelDistance: setLabelDistance};
+          setCameraControls: setCameraControls,
+          setColors: setColors,
+          setData: setData,
+          setNodeSelectCallback: setNodeSelectCallback,
+          setLabelDistance: setLabelDistance,
+          toggleLabels: toggleLabels};
 }
 
 export { MetAtlasViewer };
