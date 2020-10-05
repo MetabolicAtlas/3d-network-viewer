@@ -91,13 +91,17 @@
             );
 
             let data = makeData(5000);
-            controller.setData(data, [{group:'e', sprite:'sprite_round.png'},
-                                      {group:'r', sprite:'sprite_square.png'},
-                                      {group:'m', sprite:'sprite_triangle.png'}
-                                     ], 15);
+            controller.setData({
+                graphData: data,
+                nodeTextures: [{group:'e', sprite:'sprite_round.png'},
+                               {group:'r', sprite:'sprite_square.png'},
+                               {group:'m', sprite:'sprite_triangle.png'}],
+                nodeSize: 15
+            });
             controller.setColors({
                 nodeSelectColor: [255, 99, 71]
             });
+            controller.setBackgroundColor('black');
             controller.setNodeSelectCallback((node) => {
                 console.log('node clicked');
                 console.log(node);
