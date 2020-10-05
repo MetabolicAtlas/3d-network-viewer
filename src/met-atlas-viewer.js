@@ -171,6 +171,11 @@ function MetAtlasViewer(targetElement) {
   // holds information to connect nodes to graph id's
   var nodeInfo = [];
 
+  // initial data for setData, this should only be set once
+  let initialData = null;
+
+  let showGenes = true;
+
   // Set default controls
   setCameraControls(AtlasViewerControls);
 
@@ -192,7 +197,24 @@ function MetAtlasViewer(targetElement) {
    *     sprite:<image>}]
    * @param {object} nodeSize - Size of the nodes in graph coordinates
    */
-  function setData(graphData, nodeTextures, nodeSize) {
+  function setData({ graphData, nodeTextures, nodeSize }) {
+    if (!initialData) {
+      initialData = {
+        graphData,
+        nodeTextures,
+        nodeSize,
+      };
+    }
+
+    // reset graph
+    scene.remove(graph);
+    indexScene.remove(indexScene.children[0]);
+    requestAnimationFrame(render);
+    graph = new Group();
+    nodeInfo = [];
+    nodeColors = [];
+    indexColors = [];
+
     let nodes = graphData.nodes;
     let links = graphData.links;
 
@@ -653,6 +675,8 @@ function MetAtlasViewer(targetElement) {
       resetSelection();
     } else if (event.key == 'l') {
       toggleLabels();
+    } else if (event.key == 'g') {
+      toggleNodeType('e');
     }
   }
 
@@ -721,6 +745,8 @@ function MetAtlasViewer(targetElement) {
    * @param {array} color - color to set the sprite to.
    */
   function setSpriteColor(spriteNum, color = undefined) {
+    if (!nodeInfo[spriteNum]) return;
+
     let c = color ? color : selected.includes(spriteNum) ? nodeSelectColor : nodeInfo[spriteNum].color;
     nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = c[0];
     nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = c[1];
@@ -737,6 +763,8 @@ function MetAtlasViewer(targetElement) {
    */
   function setConnectionsColor(spriteNum, color = undefined) {
     let node = nodeInfo[spriteNum];
+    if (!node) return;
+
     node.connections.from.forEach(conn => {
       let c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionStartColor;
       connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
@@ -867,6 +895,34 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Toggles showing nodes and links for a node type;
+   */
+  function toggleNodeType(nodeType) {
+    showGenes = !showGenes;
+
+    if (showGenes) {
+      setData(initialData);
+    } else {
+      const nodes = initialData.graphData.nodes.filter(n => n.g !== nodeType);
+      const nodeIds = nodes.map(n => n.id);
+      const links = initialData.graphData.links.filter(l =>
+        nodeIds.includes(l.s) && nodeIds.includes(l.t)
+      );
+      const nodeTextures = initialData.nodeTextures.filter(t => t.group !== nodeType);
+
+      const filteredData = {
+        ...initialData,
+        graphData: {
+          nodes,
+          links,
+        },
+        nodeTextures,
+      };
+      setData(filteredData);
+    }
+  }
+
+  /**
    * Sets the distance to show node labels.
    *
    * @param {number} newDistance The new label rendering distance
@@ -986,7 +1042,8 @@ function MetAtlasViewer(targetElement) {
           setData: setData,
           setNodeSelectCallback: setNodeSelectCallback,
           setLabelDistance: setLabelDistance,
-          toggleLabels: toggleLabels};
+          toggleLabels: toggleLabels,
+          toggleNodeType: toggleNodeType};
 }
 
 export { MetAtlasViewer };
