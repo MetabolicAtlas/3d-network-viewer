@@ -1032,18 +1032,27 @@ function MetAtlasViewer(targetElement) {
     cameraControls.target.copy(m);
   }
 
+
+  /**
+   * Set background color
+   */
+  function setBackgroundColor(color) {
+    scene.background = new Color(color);
+  }
+
   // Return an interaction "controller" that we can use to control the scene.
   // Currently it's used to access the setData, setCameraControls, and filterBy
   // functions.
-  return {centerNode: centerNode,
-          selectBy: selectBy,
-          setCameraControls: setCameraControls,
-          setColors: setColors,
-          setData: setData,
-          setNodeSelectCallback: setNodeSelectCallback,
-          setLabelDistance: setLabelDistance,
-          toggleLabels: toggleLabels,
-          toggleNodeType: toggleNodeType};
+  return {centerNode,
+          setBackgroundColor,
+          selectBy,
+          setCameraControls,
+          setColors,
+          setData,
+          setNodeSelectCallback,
+          setLabelDistance,
+          toggleLabels,
+          toggleNodeType};
 }
 
 export { MetAtlasViewer };
