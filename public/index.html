@@ -108,6 +108,11 @@
                 // controller.centerNode(node);
             });
 
+            controller.setUpdateCameraCallback((position) => {
+                console.log('camera position updated');
+                console.log(position);
+            });
+
             // filter selection examples: (available after the graph has
             // initialized)
             //
