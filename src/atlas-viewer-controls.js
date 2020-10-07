@@ -463,6 +463,28 @@ var AtlasViewerControls = function( object, domElement ) {
 
     }
 
+    // the following variables and mousewheel* functions
+    // are addons to simulate mousewheel start and stop events
+
+    let interval = 50,
+        marker,
+	      counter1,
+	      counter2,
+	      counter3,
+	      counter4;
+
+    function mousewheelReset() {
+
+        marker = true;
+        counter1 = 0;
+        counter2 = null;
+        counter3 = null;
+        counter4 = null;
+
+    }
+
+    mousewheelReset();
+
     function mousewheel( event ) {
 
         if ( _this.enabled === false ) return;
@@ -491,7 +513,46 @@ var AtlasViewerControls = function( object, domElement ) {
 
         }
 
+        counter1++;
+
+        if (marker) mousewheelStart();
+
+        return false;
+
+    }
+
+    function mousewheelStart() {
+        
         _this.dispatchEvent( startEvent );
+
+        marker = false;
+
+        mousewheelContinue();
+
+        counter3 = new Date();
+
+    }
+
+    function mousewheelContinue() {
+
+        counter2 = counter1;
+
+        setTimeout(() => {
+
+            if (counter2 == counter1) {
+                mousewheelEnd();
+            } else {
+                mousewheelContinue();
+            }
+
+        }, interval);
+
+    }
+
+    function mousewheelEnd() {
+
+        mousewheelReset();
+
         _this.dispatchEvent( endEvent );
 
     }
