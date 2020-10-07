@@ -68,7 +68,7 @@ function MetAtlasViewer(targetElement) {
   let far = 10000;
   var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
   camera.position.z = 3000;
-  let nodeSelectCallback;
+  let nodeSelectCallback, updateCameraCallback;
 
   var cameraDefault = {
     position: Object.assign({}, camera.position),
@@ -727,6 +727,15 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Run the update camera callback with the updated camera position.
+   */
+  function handleUpdateCamera() {
+    if (updateCameraCallback) {
+      updateCameraCallback(camera.position);
+    }
+  }
+
+  /**
    * Sets the camera control function, and adds an event listener which calls
    * the render function whenever the controls emit a change event.
    *
@@ -735,6 +744,7 @@ function MetAtlasViewer(targetElement) {
   function setCameraControls(cameraControlFunction) {
     cameraControls = new cameraControlFunction(camera, renderer.domElement);
     cameraControls.addEventListener( 'change', render );
+    cameraControls.addEventListener( 'end', handleUpdateCamera );
     return cameraControls;
   }
 
@@ -1025,6 +1035,13 @@ function MetAtlasViewer(targetElement) {
   }
 
   /**
+   * Bind callback for when the camera is updated.
+   */
+  function setUpdateCameraCallback(callback) {
+    updateCameraCallback = callback;
+  }
+
+  /**
    * Centers camera on a node
    */
   function centerNode(node) {
@@ -1050,6 +1067,7 @@ function MetAtlasViewer(targetElement) {
           setColors,
           setData,
           setNodeSelectCallback,
+          setUpdateCameraCallback,
           setLabelDistance,
           toggleLabels,
           toggleNodeType};
