@@ -101,11 +101,12 @@
             controller.setColors({
                 nodeSelectColor: [255, 99, 71]
             });
-            controller.setBackgroundColor('black');
+            controller.setBackgroundColor('#222');
             controller.setNodeSelectCallback((node) => {
                 console.log('node clicked');
                 console.log(node);
                 // controller.centerNode(node);
+                // controller.setCamera({ x: 100, y: 100, z: 100 });
             });
 
             controller.setUpdateCameraCallback((position) => {
