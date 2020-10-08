@@ -256,9 +256,12 @@ function MetAtlasViewer(targetElement) {
       let text = document.createElement( 'div' );
       text.className = 'label';
       text.textContent = node.id;
+      text.style.fontSize = '11px';
+      text.style.fontFamily = 'monospace';
+      text.style.color = 'rgba(255,255,255,0.9)';
       text.style.marginTop = '-1em';
       text.style.padding = '5px';
-      text.style.background = "rgba(255,255,255,0.25)";
+      text.style.background = "rgba(0,0,0,0.6)";
       var label = new CSS2DObject( text );
       label.position.copy( {x: node.pos[0], y: node.pos[1], z: node.pos[2]} );
 
@@ -824,8 +827,13 @@ function MetAtlasViewer(targetElement) {
    */
   function setCamera(position, up, target) {
     camera.position.copy(position);
-    camera.up.copy(up);
-    cameraControls.target.copy(target)
+    if (up) {
+      camera.up.copy(up);
+    }
+
+    if (target) {
+      cameraControls.target.copy(target)
+    }
     requestAnimationFrame(render);
   }
 
@@ -1057,15 +1065,14 @@ function MetAtlasViewer(targetElement) {
     scene.background = new Color(color);
   }
 
-  // Return an interaction "controller" that we can use to control the scene.
-  // Currently it's used to access the setData, setCameraControls, and filterBy
-  // functions.
+  // Return a "controller" that we can use to interact with the scene.
   return {centerNode,
           setBackgroundColor,
           selectBy,
           setCameraControls,
           setColors,
           setData,
+          setCamera,
           setNodeSelectCallback,
           setUpdateCameraCallback,
           setLabelDistance,
