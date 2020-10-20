@@ -17,4 +17,4 @@ jobs:
       - run: npm ci
       - run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npmjs-token}}
+          NODE_AUTH_TOKEN: ${{secrets.NPMJS_TOKEN}}
