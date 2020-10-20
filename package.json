@@ -5,7 +5,7 @@
   "bugs": {
     "url": "https://github.com/MetabolicAtlas/MapViewer-3D/issues"
   },
-  "name": "@metabolicatlas/mapviewer-3d",
+  "name": "@metabolicatlas/3d-network-viewer",
   "version": "0.1.7",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
