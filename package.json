@@ -3,7 +3,7 @@
     "name": "Martin Norling"
   },
   "bugs": {
-    "url": "https://github.com/MetabolicAtlas/MapViewer-3D/issues"
+    "url": "https://github.com/MetabolicAtlas/3d-network-viewer/issues"
   },
   "name": "@metabolicatlas/3d-network-viewer",
   "version": "0.1.7",
@@ -32,7 +32,7 @@
   "main": "src/main.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MetabolicAtlas/MapViewer-3D.git"
+    "url": "git+https://github.com/MetabolicAtlas/3d-network-viewer.git"
   },
   "scripts": {
     "remove": "rimraf public/met-atlas-viewer.js",
