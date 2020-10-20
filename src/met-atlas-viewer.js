@@ -1011,6 +1011,7 @@ function MetAtlasViewer(targetElement) {
       nodes.forEach(node => {
         labelNode(node);
       });
+      labelRenderer.setSize( container.offsetWidth, container.offsetHeight );
       labelRenderer.render( scene, camera );
     }
   }
