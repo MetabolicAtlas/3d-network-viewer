@@ -91,13 +91,6 @@
             );
 
             let data = makeData(5000);
-            controller.setData({
-                graphData: data,
-                nodeTextures: [{group:'e', sprite:'sprite_round.png'},
-                               {group:'r', sprite:'sprite_square.png'},
-                               {group:'m', sprite:'sprite_triangle.png'}],
-                nodeSize: 15
-            });
             controller.setColors({
                 nodeSelectColor: [255, 99, 71]
             });
@@ -114,6 +107,18 @@
                 console.log(position);
             });
 
+            (async () => {
+                const startTime = Date.now();
+                await controller.setData({
+                    graphData: data,
+                    nodeTextures: [{group:'e', sprite:'sprite_round.png'},
+                                   {group:'r', sprite:'sprite_square.png'},
+                                   {group:'m', sprite:'sprite_triangle.png'}],
+                    nodeSize: 15
+                });
+                const finishTime = Date.now()
+                console.log(`It took ${finishTime - startTime}ms to render the network.`);
+            })();
             // filter selection examples: (available after the graph has
             // initialized)
             //

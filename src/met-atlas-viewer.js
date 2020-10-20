@@ -197,7 +197,7 @@ function MetAtlasViewer(targetElement) {
    *     sprite:<image>}]
    * @param {object} nodeSize - Size of the nodes in graph coordinates
    */
-  function setData({ graphData, nodeTextures, nodeSize }) {
+  async function setData({ graphData, nodeTextures, nodeSize }) {
     if (!initialData) {
       initialData = {
         graphData,
@@ -386,7 +386,7 @@ function MetAtlasViewer(targetElement) {
       }));
     });
 
-    Promise.all(promises).then(function() {
+    return Promise.all(promises).then(function() {
       // All sprite materials are available here
 
       nodeMesh = new Points(nodeGeometry, nodeMaterials);
@@ -915,11 +915,11 @@ function MetAtlasViewer(targetElement) {
   /**
    * Toggles showing nodes and links for a node type;
    */
-  function toggleNodeType(nodeType) {
+  async function toggleNodeType(nodeType) {
     showGenes = !showGenes;
 
     if (showGenes) {
-      setData(initialData);
+      return await setData(initialData);
     } else {
       const nodes = initialData.graphData.nodes.filter(n => n.g !== nodeType);
       const nodeIds = nodes.map(n => n.id);
@@ -936,7 +936,7 @@ function MetAtlasViewer(targetElement) {
         },
         nodeTextures,
       };
-      setData(filteredData);
+      return await setData(filteredData);
     }
   }
 
