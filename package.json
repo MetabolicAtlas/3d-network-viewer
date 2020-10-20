@@ -1,14 +1,14 @@
 {
   "author": {
-    "name": "Martin Norling"
+    "name": "MetabolicAtlas.org"
   },
   "bugs": {
     "url": "https://github.com/MetabolicAtlas/3d-network-viewer/issues"
   },
   "name": "@metabolicatlas/3d-network-viewer",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://registry.npmjs.org"
   },
   "bundleDependencies": false,
   "deprecated": false,
