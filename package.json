@@ -6,7 +6,7 @@
     "url": "https://github.com/MetabolicAtlas/3d-network-viewer/issues"
   },
   "name": "@metabolicatlas/3d-network-viewer",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
@@ -28,7 +28,7 @@
   "keywords": [
     "metabolic atlas"
   ],
-  "license": "GPL-3.0-or-later",
+  "license": "GPL-3.0-only",
   "main": "src/main.js",
   "repository": {
     "type": "git",
