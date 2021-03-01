@@ -22,7 +22,7 @@
     "rollup-plugin-node-resolve": "^5.2.0"
   },
   "dependencies": {
-    "three": "0.116.1"
+    "three": "0.125.0"
   },
   "homepage": "http://metabolicatlas.org/",
   "keywords": [
