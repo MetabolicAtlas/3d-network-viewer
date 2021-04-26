@@ -54,6 +54,7 @@
                                  Math.floor(255*(pos[2]-radius)/(2*radius)),
                                 ];
                     data.nodes.push({id: i, pos: pos, color: color,
+                                     n: Math.random().toString(36).substring(7),
                                      g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)]})
                     if (i > 0) {
                         if (!nice) {
