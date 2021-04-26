@@ -237,7 +237,7 @@ function MetAtlasViewer(targetElement) {
       // create a label div for the node
       let text = document.createElement( 'div' );
       text.className = 'label';
-      text.textContent = node.id;
+      text.textContent = node.n;
       text.style.fontSize = '11px';
       text.style.fontFamily = 'monospace';
       text.style.color = 'rgba(255,255,255,0.9)';
@@ -249,6 +249,7 @@ function MetAtlasViewer(targetElement) {
 
       // update info
       nodeInfo.push({id: node.id,
+        n: node.n,
         pos: node.pos,
         color: node.color ? node.color : nodeDefaultColor,
         connections: {to:[], from:[]},
@@ -566,7 +567,7 @@ function MetAtlasViewer(targetElement) {
       infoBox.style.top = (event.clientY+5).toString() + "px";
       infoBox.style.left = (event.clientX+5).toString() + "px";
       infoBox.style.visibility = 'visible';
-      infoBox.innerHTML = nodeInfo[id].id;
+      infoBox.innerHTML = nodeInfo[id].n;
     });
     if (items.length == 0) {
       infoBox.style.visibility = 'hidden';
