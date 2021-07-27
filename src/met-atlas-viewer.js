@@ -503,7 +503,7 @@ function MetAtlasViewer(targetElement) {
         testCamera.lookAt(0,0,0);
         testCamera.updateMatrix();
         testCamera.updateMatrixWorld();
-        testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+        testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
 
         while (!isInCamera(items, testCamera) && cameraDistance < maxDistance) {
           // move camera back until we've reached the max distance or we can see
@@ -519,7 +519,7 @@ function MetAtlasViewer(targetElement) {
           testCamera.lookAt(0,0,0);
           testCamera.updateMatrix();
           testCamera.updateMatrixWorld();
-          testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+          testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
         }
       }
       setFlyTarget(t);
@@ -949,7 +949,7 @@ function MetAtlasViewer(targetElement) {
     testCamera.lookAt(cameraControls.target);
     testCamera.updateMatrix();
     testCamera.updateMatrixWorld();
-    testCamera.matrixWorldInverse.getInverse( testCamera.matrixWorld );
+    testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
 
     let frustum = new Frustum();
     frustum.setFromProjectionMatrix(
@@ -990,6 +990,10 @@ function MetAtlasViewer(targetElement) {
    * Rendering function.
    */
   function render() {
+    if (!renderer) {
+      return;
+    }
+
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.render( scene, camera );
     if (showLabels) {
@@ -1067,6 +1071,19 @@ function MetAtlasViewer(targetElement) {
     window.removeEventListener('pointerdown', onMouseClick, false);
     window.removeEventListener('keypress', onKeypress, false);
 
+    // dispose objects
+    renderer.dispose()
+    scene.traverse(object => {
+    	if (!object.isMesh) return
+    	object.geometry.dispose()
+    
+    	if (object.material.isMaterial) {
+    		cleanMaterial(object.material)
+    	} else {
+    		for (const material of object.material) cleanMaterial(material)
+    	}
+    })
+    
     // clear variables
     renderer = null;
     labelRenderer = null;
@@ -1076,6 +1093,18 @@ function MetAtlasViewer(targetElement) {
 
     // remove elements
     while (container.lastChild) container.removeChild(container.lastChild);
+  }
+
+  const cleanMaterial = material => {
+  	material.dispose()
+  
+  	// dispose textures
+  	for (const key of Object.keys(material)) {
+  		const value = material[key]
+  		if (value && typeof value === 'object' && 'minFilter' in value) {
+  			value.dispose()
+  		}
+  	}
   }
 
   // Return a "controller" that we can use to interact with the scene.
