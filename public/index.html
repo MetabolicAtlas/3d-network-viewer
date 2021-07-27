@@ -119,6 +119,11 @@
                 });
                 const finishTime = Date.now()
                 console.log(`It took ${finishTime - startTime}ms to render the network.`);
+                
+                // setTimeout(() => {
+                //   console.log('disposing');
+                //   controller.dispose();
+                // }, 2000);
             })();
             // filter selection examples: (available after the graph has
             // initialized)

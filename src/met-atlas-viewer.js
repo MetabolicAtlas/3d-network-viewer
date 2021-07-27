@@ -158,6 +158,10 @@ function MetAtlasViewer(targetElement) {
 
   let showGenes = true;
 
+
+  // animation id to be used when disposing scene
+  let animationId
+
   // Set default controls
   setCameraControls(AtlasViewerControls);
 
@@ -191,7 +195,7 @@ function MetAtlasViewer(targetElement) {
     // reset graph
     scene.remove(graph);
     indexScene.remove(indexScene.children[0]);
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
     graph = new Group();
     nodeInfo = [];
     nodeColors = [];
@@ -383,7 +387,7 @@ function MetAtlasViewer(targetElement) {
       // scene, and render to show the new geometry
       scene.add(graph);
       indexScene.add(indexMesh);
-      requestAnimationFrame(render);
+      animationId = requestAnimationFrame(render);
     });
 
   }
@@ -461,7 +465,7 @@ function MetAtlasViewer(targetElement) {
     focusOnItems(items);
 
     // render the scene to make sure that it's updated
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -573,7 +577,7 @@ function MetAtlasViewer(targetElement) {
       infoBox.style.visibility = 'hidden';
     }
     select(items, false);
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   function select(items, persistent = true) {
@@ -643,7 +647,7 @@ function MetAtlasViewer(targetElement) {
     }
 
     // render the scene to make sure that it's updated
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -797,7 +801,7 @@ function MetAtlasViewer(targetElement) {
     if (cameraControls) {
       cameraControls.handleResize();
     }
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -817,7 +821,7 @@ function MetAtlasViewer(targetElement) {
     if (target) {
       cameraControls.target.copy(target)
     }
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -881,7 +885,7 @@ function MetAtlasViewer(targetElement) {
   function resetSelection() {
     select([]);
     cameraControls.target.copy({x:0, y:0, z:0});
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -892,7 +896,7 @@ function MetAtlasViewer(targetElement) {
       clearLabels();
     }
     showLabels = !showLabels;
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -930,7 +934,7 @@ function MetAtlasViewer(targetElement) {
    */
   function setLabelDistance(newDistance) {
     labelDistance = newDistance
-    requestAnimationFrame(render);
+    animationId = requestAnimationFrame(render);
   }
 
   /**
@@ -1004,7 +1008,7 @@ function MetAtlasViewer(targetElement) {
    * calling 'render()'.
    */
   function animate() {
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
     if (flyTarget.active) {
       flyUpdate();
     }
@@ -1049,8 +1053,34 @@ function MetAtlasViewer(targetElement) {
     scene.background = new Color(color);
   }
 
+  /**
+   * Disposes the viewer
+   */
+  function dispose() {
+    // stop animation
+    cancelAnimationFrame(animationId);
+
+    // remove event listeners
+    renderer.domElement.addEventListener('dblclick', null, false);
+    window.removeEventListener('resize', onWindowResize, false);
+    window.removeEventListener('mousemove', onMouseMove, false);
+    window.removeEventListener('pointerdown', onMouseClick, false);
+    window.removeEventListener('keypress', onKeypress, false);
+
+    // clear variables
+    renderer = null;
+    labelRenderer = null;
+    scene = null;
+    camera = null;
+    cameraControls = null;
+
+    // remove elements
+    while (container.lastChild) container.removeChild(container.lastChild);
+  }
+
   // Return a "controller" that we can use to interact with the scene.
   return {centerNode,
+          dispose,
           setBackgroundColor,
           selectBy,
           setCameraControls,
