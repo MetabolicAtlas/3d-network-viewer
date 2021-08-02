@@ -503,7 +503,7 @@ function MetAtlasViewer(targetElement) {
         testCamera.lookAt(0,0,0);
         testCamera.updateMatrix();
         testCamera.updateMatrixWorld();
-        testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
+        testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
 
         while (!isInCamera(items, testCamera) && cameraDistance < maxDistance) {
           // move camera back until we've reached the max distance or we can see
@@ -519,7 +519,7 @@ function MetAtlasViewer(targetElement) {
           testCamera.lookAt(0,0,0);
           testCamera.updateMatrix();
           testCamera.updateMatrixWorld();
-          testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
+          testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
         }
       }
       setFlyTarget(t);
@@ -949,7 +949,7 @@ function MetAtlasViewer(targetElement) {
     testCamera.lookAt(cameraControls.target);
     testCamera.updateMatrix();
     testCamera.updateMatrixWorld();
-    testCamera.matrixWorldInverse.invert( testCamera.matrixWorld );
+    testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
 
     let frustum = new Frustum();
     frustum.setFromProjectionMatrix(
