@@ -22,7 +22,7 @@
     "terser": "^4.6.4"
   },
   "dependencies": {
-    "three": "^0.126.0"
+    "three": "^0.137.0"
   },
   "homepage": "http://metabolicatlas.org/",
   "keywords": [
