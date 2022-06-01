@@ -20,4 +20,4 @@ The current version of the build is done with rollup, controlled by `rollup.conf
 
 #### Notes
 
-The library is automatically packaged and pushed to [npmjs.org](https://www.npmjs.com/package/@metabolicatlas/3d-network-viewer) via a GitHub Action. However, the action does not automatically bump the version, which means that occasional failures appear because of this.
+The library is automatically packaged and pushed to [npmjs.org](https://www.npmjs.com/package/@metabolicatlas/3d-network-viewer) via a GitHub Action. However, the action does not automatically bump the version, which means that occasional failures appear because of this. To bump up the version, edit the corresponding field in `package.json` (see [this commit](https://github.com/MetabolicAtlas/3d-network-viewer/commit/35f0770b9643cc4adb52bc0b5c3f572be1609203) as an example).
