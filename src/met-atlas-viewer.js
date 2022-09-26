@@ -20,7 +20,6 @@ import {
   Scene,
   TextureLoader,
   Uint8BufferAttribute,
-  VertexColors,
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
@@ -28,7 +27,7 @@ import {
 import {
   CSS2DObject,
   CSS2DRenderer,
-} from './CSS2DRenderer';
+} from '../node_modules/three/examples/jsm/renderers/CSS2DRenderer';
 
 import { AtlasViewerControls } from './atlas-viewer-controls';
 import { makeIndexSprite } from './helpers';
@@ -286,7 +285,7 @@ function MetAtlasViewer(targetElement) {
                                new Uint8BufferAttribute(indexColors, 3, true));
 
     // Create the link material and geometry
-    var lineMaterial = new LineBasicMaterial({vertexColors: VertexColors,
+    var lineMaterial = new LineBasicMaterial({vertexColors: true,
       transparent: true,
       depthTest: true,
       opacity: 0.67
@@ -348,7 +347,7 @@ function MetAtlasViewer(targetElement) {
         var sprite = textureLoader.load(tex.sprite, function () {
           nodeMaterials.push(new PointsMaterial({
             size: nodeSize,
-            vertexColors: VertexColors,
+            vertexColors: true,
             map: sprite,
             transparent: true,
             depthTest: true,
@@ -361,7 +360,7 @@ function MetAtlasViewer(targetElement) {
 
           indexMaterials.push(new PointsMaterial({
             size: nodeSize,
-            vertexColors: VertexColors,
+            vertexColors: true,
             map: indexSprite,
             transparent: true,
             depthTest: true,
