@@ -22,7 +22,7 @@
     "terser": "^4.6.4"
   },
   "dependencies": {
-    "three": "^0.126.0"
+    "three": "^0.144.0"
   },
   "homepage": "http://metabolicatlas.org/",
   "keywords": [
@@ -42,5 +42,6 @@
     "prepare": "npm run build && npm run minify",
     "minify": "terser public/met-atlas-viewer.js -o build/met-atlas-viewer.min.js -c -m --comments '/Version/'",
     "start": "serve public"
-  }
+  },
+  "type": "module"
 }
