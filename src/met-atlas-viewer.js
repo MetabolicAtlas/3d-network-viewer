@@ -10,7 +10,6 @@ import {
   Float32BufferAttribute,
   Frustum,
   Group,
-  LineBasicMaterial,
   LineSegments,
   Matrix4,
   NearestFilter,
@@ -22,15 +21,18 @@ import {
   Uint8BufferAttribute,
   WebGLRenderer,
   WebGLRenderTarget,
-} from 'three';
+} from "three";
 
+import { CSS2DRenderer } from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
+
+import { AtlasViewerControls } from "./atlas-viewer-controls";
 import {
-  CSS2DObject,
-  CSS2DRenderer,
-} from '../node_modules/three/examples/jsm/renderers/CSS2DRenderer';
-
-import { AtlasViewerControls } from './atlas-viewer-controls';
-import { makeIndexSprite } from './helpers';
+  makeIndexSprite,
+  createInfoBox,
+  createLabel,
+  lineMaterial,
+  defaultColors,
+} from "./helpers";
 
 /**
  * Creates a rendering context for the Metabolic Atlas Viewer.
@@ -39,24 +41,24 @@ import { makeIndexSprite } from './helpers';
  *     viewer should be placed.
  * @returns {Object} A control object with functions for controlling the viewer.
  */
-function MetAtlasViewer(targetElement) {
-  const container = document.getElementById(targetElement)
+const MetAtlasViewer = (targetElement) => {
+  const container = document.getElementById(targetElement);
 
   // Camera variables
   let fieldOfView = 90;
   let aspect = container.offsetWidth / container.offsetHeight;
   let near = 1;
   let far = 10000;
-  var camera = new PerspectiveCamera(fieldOfView, aspect, near, far)
+  let camera = new PerspectiveCamera(fieldOfView, aspect, near, far);
   camera.position.z = 3000;
   let nodeSelectCallback, updateCameraCallback;
 
-  var cameraDefault = {
+  const cameraDefault = {
     position: Object.assign({}, camera.position),
     up: Object.assign({}, camera.up),
-    target: Object.assign({}, camera.up)
+    target: Object.assign({}, camera.up),
   };
-  var flyTarget = {
+  const flyTarget = {
     active: false,
     start: undefined,
     startUp: undefined,
@@ -64,105 +66,78 @@ function MetAtlasViewer(targetElement) {
     target: undefined,
     startTime: undefined,
     targetUp: undefined,
-    runTime: 750
+    runTime: 750,
   };
 
-  // Set default colors
-  var nodeDefaultColor = [255,255,255];
-  var connectionStartColor = [0, 127, 255];
-  var connectionEndColor = [0, 127, 0];
-  var nodeSelectColor = [255, 0, 0];
-  var connectionSelectColor = [255, 255, 0];
-  var hoverSelectColor = [255, 0, 255];
-  var hoverConnectionColor = [255, 0, 0];
-
   // Create the scene and set background
-  var scene = new Scene();
-  scene.background = new Color( 0xdddddd );
+  let scene = new Scene();
+  scene.background = new Color(0xdddddd);
 
   // Create color picking scene and target
-  var indexScene = new Scene();
-  indexScene.background = new Color( 0xffffff );
-  var indexTarget = new WebGLRenderTarget(1,1);
+  const indexScene = new Scene();
+  indexScene.background = new Color(0xffffff);
+  const indexTarget = new WebGLRenderTarget(1, 1);
 
   // Create object group for the graph
-  var graph = new Group();
+  let graph = new Group();
 
   // Create nodeMesh and connectionMesh as globals so that we can modify them
   // later
-  var nodeMesh;
-  var connectionMesh;
+  let nodeMesh;
+  let connectionMesh;
 
   // Create color and material arrays for the nodes
-  var nodeColors = [];
-  var indexColors = [];
+  let nodeColors = [];
+  let indexColors = [];
 
   // Create a list to keep track of selected nodes.
-  var selected = [];
+  const selected = [];
 
   // Create another reference to keep track of hover-selected node
-  var hoverNode;
+  let hoverNode;
 
   // Create a texture loader for later
   const textureLoader = new TextureLoader();
 
   // Create renderer
-  var renderer = new WebGLRenderer();
+  let renderer = new WebGLRenderer();
   renderer.setSize(container.offsetWidth, container.offsetHeight);
 
   // Add the renderer to the target element
   container.appendChild(renderer.domElement);
 
   // Add a label-renderer for node labels
-  var labelRenderer = new CSS2DRenderer();
-  labelRenderer.setSize( container.offsetWidth, container.offsetHeight );
-  labelRenderer.domElement.style.position = 'absolute';
-  labelRenderer.domElement.style.top = '0';
-  labelRenderer.domElement.style.pointerEvents = 'none';
+  let labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(container.offsetWidth, container.offsetHeight);
+  labelRenderer.domElement.style.position = "absolute";
+  labelRenderer.domElement.style.top = "0";
+  labelRenderer.domElement.style.pointerEvents = "none";
   container.appendChild(labelRenderer.domElement);
 
-  var labels = new Group();
-  graph.add( labels );
+  const labels = new Group();
+  graph.add(labels);
 
   // and label controls
-  var showLabels = true;
-  var labelDistance = 200;
+  let showLabels = true;
+  let labelDistance = 200;
 
   // Create a div to use for node mouseover information
-  var infoBox = document.createElement('div');
-  infoBox.style.position = 'fixed';
-  infoBox.style.top = '0';
-  infoBox.style.left = '0';
-  infoBox.style.visibility = 'hidden';
-  infoBox.style.backgroundColor = 'rgba(255,255,255,0.5)';
-  infoBox.style.padding = '10px';
-  infoBox.style.borderRadius = '5px';
-  infoBox.style.border = '1px solid rgba(0,0,0,0.6)';
+  const infoBox = createInfoBox();
   container.appendChild(infoBox);
 
-  // Add window resize listener and mouse listener
-  window.addEventListener('resize', onWindowResize, false);
-  window.addEventListener('mousemove', onMouseMove, false);
-  window.addEventListener('pointerdown', onMouseClick, false);
-  window.addEventListener('keypress', onKeypress, false);
-
   // Set a camera control placeholder
-  var cameraControls;
+  let cameraControls;
 
   // holds information to connect nodes to graph id's
-  var nodeInfo = [];
+  let nodeInfo = [];
 
   // initial data for setData, this should only be set once
   let initialData = null;
 
   let showGenes = true;
 
-
   // animation id to be used when disposing scene
-  let animationId
-
-  // Set default controls
-  setCameraControls(AtlasViewerControls);
+  let animationId;
 
   /**
    * Sets the graph data to display in the viewer.
@@ -182,7 +157,7 @@ function MetAtlasViewer(targetElement) {
    *     sprite:<image>}]
    * @param {object} nodeSize - Size of the nodes in graph coordinates
    */
-  async function setData({ graphData, nodeTextures, nodeSize }) {
+  const setData = async ({ graphData, nodeTextures, nodeSize }) => {
     if (!initialData) {
       initialData = {
         graphData,
@@ -204,74 +179,70 @@ function MetAtlasViewer(targetElement) {
     let links = graphData.links;
 
     // Make an index to keep track of nodes for the connections
-    var nodeIndex = {}
+    const nodeIndex = {};
 
     // create the node and index geometries
-    var nodeGeometry = new BufferGeometry();
-    var indexGeometry = new BufferGeometry();
+    const nodeGeometry = new BufferGeometry();
+    const indexGeometry = new BufferGeometry();
 
     // Sort the vertex positions by group, so that we can set the materials
     // properly
-    nodes.sort((a,b) => a.g.localeCompare(b.g));
+    nodes.sort((a, b) => a.g.localeCompare(b.g));
 
     // Sort the materials as well so that the arrays match
-    nodeTextures.sort((a,b) => a.group.localeCompare(b.group));
+    nodeTextures.sort((a, b) => a.group.localeCompare(b.group));
 
     // Set node positions and colors, and set a unique index color for each
     // node. The index color will be used for selecting nodes in the scene.
-    var nodePositions = [];
-    var nodeGroups = {};
-    nodes.forEach((node,i) => {
+    const nodePositions = [];
+    const nodeGroups = {};
+    nodes.forEach((node, i) => {
       nodePositions.push.apply(nodePositions, node.pos);
       if (nodeGroups[node.g] === undefined) {
         nodeGroups[node.g] = 1;
       } else {
         nodeGroups[node.g] += 1;
       }
-      let color = node.color ? node.color : nodeDefaultColor;
+      let color = node.color ? node.color : defaultColors["nodeDefaultColor"];
       nodeColors.push.apply(nodeColors, color);
-      indexColors.push(Math.floor(i/(256*256)),
-                       Math.floor(i/256) % 256,
-                       i % 256
-                      );
+      indexColors.push(
+        Math.floor(i / (256 * 256)),
+        Math.floor(i / 256) % 256,
+        i % 256
+      );
       // update index
-      nodeIndex[node.id] = {pos: node.pos, index: i};
+      nodeIndex[node.id] = { pos: node.pos, index: i };
 
-      // create a label div for the node
-      let text = document.createElement( 'div' );
-      text.className = 'label';
-      text.textContent = node.n;
-      text.style.fontSize = '11px';
-      text.style.fontFamily = 'monospace';
-      text.style.color = 'rgba(255,255,255,0.9)';
-      text.style.marginTop = '-1em';
-      text.style.padding = '5px';
-      text.style.background = "rgba(0,0,0,0.6)";
-      var label = new CSS2DObject( text );
-      label.position.copy( {x: node.pos[0], y: node.pos[1], z: node.pos[2]} );
+      const label = createLabel(node);
 
       // update info
-      nodeInfo.push({id: node.id,
+      nodeInfo.push({
+        id: node.id,
         n: node.n,
         pos: node.pos,
-        color: node.color ? node.color : nodeDefaultColor,
-        connections: {to:[], from:[]},
+        color: node.color ? node.color : defaultColors["nodeDefaultColor"],
+        connections: { to: [], from: [] },
         index: i,
         label: label,
-        group: node.g});
+        group: node.g,
+      });
     });
-    scene.add( labels );
+    scene.add(labels);
 
     // bind arrays to node geometry attributes
-    nodeGeometry.setAttribute('position',
-                              new Float32BufferAttribute(nodePositions, 3));
-    nodeGeometry.setAttribute('color',
-                              new Uint8BufferAttribute(nodeColors, 3, true));
+    nodeGeometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(nodePositions, 3)
+    );
+    nodeGeometry.setAttribute(
+      "color",
+      new Uint8BufferAttribute(nodeColors, 3, true)
+    );
     nodeGeometry.computeBoundingSphere();
 
     let last = 0;
     // Set material groups
-    nodeTextures.forEach(function(texture, i) {
+    nodeTextures.forEach((texture, i) => {
       let current = nodeGroups[texture.group];
       nodeGeometry.addGroup(last, current, i);
       indexGeometry.addGroup(last, current, i);
@@ -279,60 +250,71 @@ function MetAtlasViewer(targetElement) {
     });
 
     // Set index geometry attributes
-    indexGeometry.setAttribute('position',
-                               new Float32BufferAttribute(nodePositions, 3));
-    indexGeometry.setAttribute('color',
-                               new Uint8BufferAttribute(indexColors, 3, true));
+    indexGeometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(nodePositions, 3)
+    );
+    indexGeometry.setAttribute(
+      "color",
+      new Uint8BufferAttribute(indexColors, 3, true)
+    );
 
-    // Create the link material and geometry
-    var lineMaterial = new LineBasicMaterial({vertexColors: true,
-      transparent: true,
-      depthTest: true,
-      opacity: 0.67
-    });
+    const linePositions = [];
+    const lineColors = [];
 
-    var linePositions = [];
-    var lineColors = [];
-
-    for ( var i = 0; i < links.length; i ++ ) {
+    for (let i = 0; i < links.length; i++) {
       // Check the the nodes are in the graph
       if (!(links[i].s in nodeIndex)) {
-        console.warn("ignoring link: '" + links[i].s + "' to '" + links[i].t +
-                     ". The start node is not in the node list.")
-        continue
+        console.warn(
+          "ignoring link: '" +
+            links[i].s +
+            "' to '" +
+            links[i].t +
+            ". The start node is not in the node list."
+        );
+        continue;
       }
       if (!(links[i].t in nodeIndex)) {
-        console.warn("ignoring link: '" + links[i].s + "' to '" + links[i].t +
-                     ". The end node is not in the node list.")
-        continue
+        console.warn(
+          "ignoring link: '" +
+            links[i].s +
+            "' to '" +
+            links[i].t +
+            ". The end node is not in the node list."
+        );
+        continue;
       }
       // Start position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].s].pos);
-      lineColors.push.apply(lineColors, connectionStartColor );
+      lineColors.push.apply(lineColors, defaultColors["connectionStartColor"]);
 
       // End position and color
       linePositions.push.apply(linePositions, nodeIndex[links[i].t].pos);
-      lineColors.push.apply(lineColors, connectionEndColor );
+      lineColors.push.apply(lineColors, defaultColors["connectionEndColor"]);
 
       // Add connections to nodeInfo
       // to:
       nodeInfo[nodeIndex[links[i].s].index].connections.to.push({
-        index: i*2+1,
-        neighbor: links[i].t
-        });
+        index: i * 2 + 1,
+        neighbor: links[i].t,
+      });
       // from:
       nodeInfo[nodeIndex[links[i].t].index].connections.from.push({
-        index: i*2,
-        neighbor: links[i].s
-        })
+        index: i * 2,
+        neighbor: links[i].s,
+      });
     }
 
     // set line geometry attributes and mesh.
-    var lineGeometry = new BufferGeometry();
-    lineGeometry.setAttribute('position',
-                              new Float32BufferAttribute(linePositions, 3));
-    lineGeometry.setAttribute('color',
-                              new Uint8BufferAttribute(lineColors, 3, true));
+    const lineGeometry = new BufferGeometry();
+    lineGeometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(linePositions, 3)
+    );
+    lineGeometry.setAttribute(
+      "color",
+      new Uint8BufferAttribute(lineColors, 3, true)
+    );
 
     connectionMesh = new LineSegments(lineGeometry, lineMaterial);
     // Add the lines to the graph group and set it to render first
@@ -340,39 +322,45 @@ function MetAtlasViewer(targetElement) {
     connectionMesh.renderOrder = 0;
 
     let promises = [];
-    var nodeMaterials = [];
-    var indexMaterials = [];
-    nodeTextures.forEach(tex => {
-      promises.push(new Promise(function (resolve, reject) {
-        var sprite = textureLoader.load(tex.sprite, function () {
-          nodeMaterials.push(new PointsMaterial({
-            size: nodeSize,
-            vertexColors: true,
-            map: sprite,
-            transparent: true,
-            depthTest: true,
-            alphaTest: 0.5
-          }));
+    const nodeMaterials = [];
+    const indexMaterials = [];
+    nodeTextures.forEach((tex) => {
+      promises.push(
+        new Promise((resolve) => {
+          const sprite = textureLoader.load(tex.sprite, () => {
+            nodeMaterials.push(
+              new PointsMaterial({
+                size: nodeSize,
+                vertexColors: true,
+                map: sprite,
+                transparent: true,
+                depthTest: true,
+                alphaTest: 0.5,
+              })
+            );
 
-          var indexSprite = textureLoader.load(makeIndexSprite(sprite));
-          indexSprite.magFilter = NearestFilter;
-          indexSprite.minFilter = NearestFilter;
+            const indexSprite = textureLoader.load(makeIndexSprite(sprite));
+            indexSprite.magFilter = NearestFilter;
+            indexSprite.minFilter = NearestFilter;
 
-          indexMaterials.push(new PointsMaterial({
-            size: nodeSize,
-            vertexColors: true,
-            map: indexSprite,
-            transparent: true,
-            depthTest: true,
-            flatShading: true,
-            alphaTest: 0.5
-          }));
-          resolve("texture loaded");
-        });
-      }));
+            indexMaterials.push(
+              new PointsMaterial({
+                size: nodeSize,
+                vertexColors: true,
+                map: indexSprite,
+                transparent: true,
+                depthTest: true,
+                flatShading: true,
+                alphaTest: 0.5,
+              })
+            );
+            resolve("texture loaded");
+          });
+        })
+      );
     });
 
-    return Promise.all(promises).then(function() {
+    return Promise.all(promises).then(() => {
       // All sprite materials are available here
 
       nodeMesh = new Points(nodeGeometry, nodeMaterials);
@@ -388,8 +376,7 @@ function MetAtlasViewer(targetElement) {
       indexScene.add(indexMesh);
       animationId = requestAnimationFrame(render);
     });
-
-  }
+  };
 
   /**
    * Sets the default colors
@@ -405,37 +392,16 @@ function MetAtlasViewer(targetElement) {
    * - hoverSelectColor
    * - hoverConnectionColor
    */
-  function setColors(colors) {
+  const setColors = (colors) => {
     const keys = Object.keys(colors);
+    const validKeys = Object.keys(defaultColors);
 
-    if (keys.includes('nodeDefaultColor')) {
-      nodeDefaultColor = colors.nodeDefaultColor;
-    }
-
-    if (keys.includes('connectionStartColor')) {
-      connectionStartColor = colors.connectionStartColor;
-    }
-
-    if (keys.includes('connectionEndColor')) {
-      connectionEndColor = colors.connectionEndColor;
-    }
-
-    if (keys.includes('nodeSelectColor')) {
-      nodeSelectColor = colors.nodeSelectColor;
-    }
-
-    if (keys.includes('connectionSelectColor')) {
-      connectionSelectColor = colors.connectionSelectColor;
-    }
-
-    if (keys.includes('hoverSelectColor')) {
-      hoverSelectColor = colors.hoverSelectColor;
-    }
-
-    if (keys.includes('hoverConnectionColor')) {
-      hoverConnectionColor = colors.hoverConnectionColor;
-    }
-  }
+    keys.forEach((key) => {
+      if (validKeys.includes(key)) {
+        defaultColors[key] = colors[key];
+      }
+    });
+  };
 
   /**
    * Selects nodes in the graph based on a filter.
@@ -444,28 +410,32 @@ function MetAtlasViewer(targetElement) {
    *     to the nodes. If a node has the same key-value pair it will be
    *     selected.
    */
-  function selectBy(filter) {
+  const selectBy = (filter) => {
     for (let key of Object.keys(filter)) {
       if (!Array.isArray(filter[key])) {
         filter[key] = [filter[key]];
       }
     }
 
-    let items = nodeInfo.filter(v => {
-      for (const key of Object.keys(filter)) {
-        if (filter[key].includes(v[key])) {
-          return true;
+    const items = nodeInfo
+      .filter((v) => {
+        for (const key of Object.keys(filter)) {
+          if (filter[key].includes(v[key])) {
+            return true;
+          }
         }
-      }
-      return false;
-    }).map(i => {return i.index});
+        return false;
+      })
+      .map((i) => {
+        return i.index;
+      });
     select(items);
 
     focusOnItems(items);
 
     // render the scene to make sure that it's updated
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Given a lisf of nodes, `items`, this function will calculate the center
@@ -475,19 +445,18 @@ function MetAtlasViewer(targetElement) {
    * The function will attempt to move the camera backwards along the vector
    * until all items are inside the camera frustum.
    */
-  function focusOnItems(items) {
-
+  const focusOnItems = (items) => {
     // move camera to view items.
     if (items.length > 0) {
-      let p = midPoint(items)
-      let l = Math.sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+      let p = midPoint(items);
+      let l = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
 
       let cameraDistance = 50; // default, for single items
 
       let t = {
-        x: p.x + p.x/l * cameraDistance,
-        y: p.y + p.y/l * cameraDistance,
-        z: p.z + p.z/l * cameraDistance
+        x: p.x + (p.x / l) * cameraDistance,
+        y: p.y + (p.y / l) * cameraDistance,
+        z: p.z + (p.z / l) * cameraDistance,
       };
 
       let cameraStep = 50;
@@ -496,10 +465,15 @@ function MetAtlasViewer(targetElement) {
         // copy camera to move it around without having to mess with the scene,
         // but make the FoV slightly narrower to make sure things are inside the
         // visible portion of the view on the main camera.
-        let testCamera = new PerspectiveCamera(fieldOfView-10, aspect, near, far);
+        let testCamera = new PerspectiveCamera(
+          fieldOfView - 10,
+          aspect,
+          near,
+          far
+        );
         testCamera.position.copy(t);
-        testCamera.up.copy({x:0, y:1, z:0});
-        testCamera.lookAt(0,0,0);
+        testCamera.up.copy({ x: 0, y: 1, z: 0 });
+        testCamera.lookAt(0, 0, 0);
         testCamera.updateMatrix();
         testCamera.updateMatrixWorld();
         testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
@@ -509,13 +483,13 @@ function MetAtlasViewer(targetElement) {
           // all object in the camera
           cameraDistance += cameraStep;
           t = {
-            x: p.x + p.x/l * cameraDistance,
-            y: p.y + p.y/l * cameraDistance,
-            z: p.z + p.z/l * cameraDistance
+            x: p.x + (p.x / l) * cameraDistance,
+            y: p.y + (p.y / l) * cameraDistance,
+            z: p.z + (p.z / l) * cameraDistance,
           };
           testCamera.position.copy(t);
-          testCamera.up.copy({x:0, y:1, z:0});
-          testCamera.lookAt(0,0,0);
+          testCamera.up.copy({ x: 0, y: 1, z: 0 });
+          testCamera.lookAt(0, 0, 0);
           testCamera.updateMatrix();
           testCamera.updateMatrixWorld();
           testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
@@ -523,24 +497,28 @@ function MetAtlasViewer(targetElement) {
       }
       setFlyTarget(t);
     }
-  }
+  };
 
   /**
    * returns the midpoints given a list of node index numbers.
    *
    * @param {*} items Items to get midpoint for
    */
-  function midPoint(items) {
-    let s = items.map(i => nodeInfo[i]).reduce((a,b) => {
-      return {x: a.x+b.pos[0], y:a.y+b.pos[1], z: a.z+b.pos[2]};},
-      {x:0,y:0,z:0}
-    );
+  const midPoint = (items) => {
+    let s = items
+      .map((i) => nodeInfo[i])
+      .reduce(
+        (a, b) => {
+          return { x: a.x + b.pos[0], y: a.y + b.pos[1], z: a.z + b.pos[2] };
+        },
+        { x: 0, y: 0, z: 0 }
+      );
     return {
       x: s.x / items.length,
       y: s.y / items.length,
-      z: s.z / items.length
+      z: s.z / items.length,
     };
-  }
+  };
 
   /**
    * Given a number of items and a camera, this function will return true if all
@@ -549,38 +527,44 @@ function MetAtlasViewer(targetElement) {
    * @param {*} items - A list of node id's
    * @param {*} cam - The camera to test with
    */
-  function isInCamera(items, cam) {
+  const isInCamera = (items, cam) => {
     let retval = true;
     let frustum = new Frustum();
-    frustum.setFromProjectionMatrix( new Matrix4().multiplyMatrices( cam.projectionMatrix, cam.matrixWorldInverse ) );
-    items.map(i => nodeInfo[i]).forEach(node => {
-      let pos = {x: node.pos[0], y: node.pos[1], z: node.pos[2]};
-      retval = retval && frustum.containsPoint(pos);
-    });
+    frustum.setFromProjectionMatrix(
+      new Matrix4().multiplyMatrices(
+        cam.projectionMatrix,
+        cam.matrixWorldInverse
+      )
+    );
+    items
+      .map((i) => nodeInfo[i])
+      .forEach((node) => {
+        let pos = { x: node.pos[0], y: node.pos[1], z: node.pos[2] };
+        retval = retval && frustum.containsPoint(pos);
+      });
     return retval;
-  }
+  };
 
   /**
    * Mouse move callback that does scene object picking.
    * @param {event} event - A mouse move event
    */
-  function onMouseMove(event) {
-    var items = pickInScene(event);
-    items.forEach(id => {
-      infoBox.style.top = (event.clientY+5).toString() + "px";
-      infoBox.style.left = (event.clientX+5).toString() + "px";
-      infoBox.style.visibility = 'visible';
+  const onMouseMove = (event) => {
+    const items = pickInScene(event);
+    items.forEach((id) => {
+      infoBox.style.top = (event.clientY + 5).toString() + "px";
+      infoBox.style.left = (event.clientX + 5).toString() + "px";
+      infoBox.style.visibility = "visible";
       infoBox.innerHTML = nodeInfo[id].n;
     });
     if (items.length == 0) {
-      infoBox.style.visibility = 'hidden';
+      infoBox.style.visibility = "hidden";
     }
     select(items, false);
     animationId = requestAnimationFrame(render);
-  }
+  };
 
-  function select(items, persistent = true) {
-
+  const select = (items, persistent = true) => {
     if (persistent) {
       // reset the currently persistently selected sprites
       while (selected.length > 0) {
@@ -594,7 +578,7 @@ function MetAtlasViewer(targetElement) {
     }
 
     // save current selected ids
-    items.forEach(id => {
+    items.forEach((id) => {
       if (persistent) {
         selected.push(id);
       } else {
@@ -602,10 +586,20 @@ function MetAtlasViewer(targetElement) {
       }
 
       // update selected if with red color
-      setSpriteColor(id, persistent ? nodeSelectColor : hoverSelectColor);
+      setSpriteColor(
+        id,
+        persistent
+          ? defaultColors["nodeSelectColor"]
+          : defaultColors["hoverSelectColor"]
+      );
 
       // update selected connections with blue
-      setConnectionsColor(id, persistent ? connectionSelectColor : hoverConnectionColor)
+      setConnectionsColor(
+        id,
+        persistent
+          ? defaultColors["connectionSelectColor"]
+          : defaultColors["hoverConnectionColor"]
+      );
     });
 
     if (persistent) {
@@ -614,19 +608,19 @@ function MetAtlasViewer(targetElement) {
       // cameraControls.target.copy(m);
 
       // Create new selection event
-      let selectEvent = new CustomEvent(
-          "select",
-          {
-              detail: {
-                items: items.map(i => {return nodeInfo[i];})
-              },
-              bubbles: false,
-              cancelable: true
-          });
+      let selectEvent = new CustomEvent("select", {
+        detail: {
+          items: items.map((i) => {
+            return nodeInfo[i];
+          }),
+        },
+        bubbles: false,
+        cancelable: true,
+      });
 
       container.dispatchEvent(selectEvent);
     }
-  }
+  };
 
   /**
    * Mouse click callback which calls pickInScene to get the current object
@@ -634,9 +628,8 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {event} - A mouse click event.
    */
-  function onMouseClick(event) {
-
-    var items = pickInScene(event);
+  const onMouseClick = (event) => {
+    const items = pickInScene(event);
 
     if (items.length > 0) {
       select(items);
@@ -647,7 +640,7 @@ function MetAtlasViewer(targetElement) {
 
     // render the scene to make sure that it's updated
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Handles keypresses. Current controls:
@@ -657,17 +650,17 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {*} event - A keypress event
    */
-  function onKeypress(event) {
-    if (event.key == 'r') {
+  const onKeypress = (event) => {
+    if (event.key == "r") {
       resetCamera();
-    } else if (event.key == 'q') {
+    } else if (event.key == "q") {
       resetSelection();
-    } else if (event.key == 'l') {
+    } else if (event.key == "l") {
       toggleLabels();
-    } else if (event.key == 'g') {
-      toggleNodeType('e');
+    } else if (event.key == "g") {
+      toggleNodeType("e");
     }
-  }
+  };
 
   /**
    * Does scene object picking by rendering the pixel at the mouse pointer,
@@ -676,32 +669,34 @@ function MetAtlasViewer(targetElement) {
    * @param {*} event - An event containing mouse coordinates.
    * @returns {number} ID number of the picked object.
    */
-  function pickInScene(event) {
+  const pickInScene = (event) => {
     let size = renderer.domElement.getBoundingClientRect();
-    let dpr = window.devicePixelRatio || 1;
-    var posX = event.clientX-size.x;
-    var posY = event.clientY-size.y;
+    let dpr = window.devicePixelRatio || 1;
+    const posX = event.clientX - size.x;
+    const posY = event.clientY - size.y;
 
     // set the camera to only render the pixel under the cursor.
-    camera.setViewOffset(renderer.domElement.width,
+    camera.setViewOffset(
+      renderer.domElement.width,
       renderer.domElement.height,
       posX * dpr,
       posY * dpr,
       1,
-      1);
+      1
+    );
 
     // change rendering target so that the image stays on the screen
     renderer.setRenderTarget(indexTarget);
     renderer.render(indexScene, camera);
 
-    var pixelBuffer = new Uint8Array(4);
+    const pixelBuffer = new Uint8Array(4);
 
     renderer.readRenderTargetPixels(indexTarget, 0, 0, 1, 1, pixelBuffer);
     // check if the color is white (background)
-    if (pixelBuffer[2] == pixelBuffer[1] == pixelBuffer[0] == 255) {
+    if (((pixelBuffer[2] == pixelBuffer[1]) == pixelBuffer[0]) == 255) {
       return;
     }
-    var id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
+    const id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | pixelBuffer[2];
 
     // reset the camera and rendering target.
     camera.clearViewOffset();
@@ -713,16 +708,16 @@ function MetAtlasViewer(targetElement) {
     }
 
     return [id];
-  }
+  };
 
   /**
    * Run the update camera callback with the updated camera position.
    */
-  function handleUpdateCamera() {
+  const handleUpdateCamera = () => {
     if (updateCameraCallback) {
       updateCameraCallback(camera.position);
     }
-  }
+  };
 
   /**
    * Sets the camera control function, and adds an event listener which calls
@@ -730,12 +725,12 @@ function MetAtlasViewer(targetElement) {
    *
    * @param {function} cameraControlFunction
    */
-  function setCameraControls(cameraControlFunction) {
+  const setCameraControls = (cameraControlFunction) => {
     cameraControls = new cameraControlFunction(camera, renderer.domElement);
-    cameraControls.addEventListener( 'change', render );
-    cameraControls.addEventListener( 'end', handleUpdateCamera );
+    cameraControls.addEventListener("change", render);
+    cameraControls.addEventListener("end", handleUpdateCamera);
     return cameraControls;
-  }
+  };
 
   /**
    * Sets the color of 'spriteNum' in the nodeMesh to 'color'.
@@ -743,15 +738,19 @@ function MetAtlasViewer(targetElement) {
    * @param {number} spriteNum - id of the sprite in the nodemesh
    * @param {array} color - color to set the sprite to.
    */
-  function setSpriteColor(spriteNum, color = undefined) {
+  const setSpriteColor = (spriteNum, color = undefined) => {
     if (!nodeInfo[spriteNum]) return;
 
-    let c = color ? color : selected.includes(spriteNum) ? nodeSelectColor : nodeInfo[spriteNum].color;
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+0] = c[0];
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+1] = c[1];
-    nodeMesh.geometry.attributes.color.array[spriteNum*3+2] = c[2];
+    let c = color
+      ? color
+      : selected.includes(spriteNum)
+      ? defaultColors["nodeSelectColor"]
+      : nodeInfo[spriteNum].color;
+    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 0] = c[0];
+    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 1] = c[1];
+    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 2] = c[2];
     nodeMesh.geometry.attributes.color.needsUpdate = true;
-  }
+  };
 
   /**
    * Colors all connections of the sprite selected by `spriteNum`.
@@ -760,48 +759,64 @@ function MetAtlasViewer(targetElement) {
    * @param {*} color - (optional) color to set the connections to. If omitted,
    *     the default connection colors will be used.
    */
-  function setConnectionsColor(spriteNum, color = undefined) {
+  const setConnectionsColor = (spriteNum, color = undefined) => {
     let node = nodeInfo[spriteNum];
     if (!node) return;
 
-    node.connections.from.forEach(conn => {
-      let c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionStartColor;
-      connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
+    node.connections.from.forEach((conn) => {
+      let c = color
+        ? color
+        : selected.includes(spriteNum)
+        ? defaultColors["connectionSelectColor"]
+        : defaultColors["connectionStartColor"];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 0] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 1] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 2] = c[2];
 
-      c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionEndColor;
-      connectionMesh.geometry.attributes.color.array[conn.index*3+3] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+4] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+5] = c[2];
+      c = color
+        ? color
+        : selected.includes(spriteNum)
+        ? defaultColors["connectionSelectColor"]
+        : defaultColors["connectionEndColor"];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 3] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 4] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 5] = c[2];
     });
-    node.connections.to.forEach(conn => {
-      let c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionStartColor;
-      connectionMesh.geometry.attributes.color.array[conn.index*3-3] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index*3-2] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index*3-1] = c[2];
+    node.connections.to.forEach((conn) => {
+      let c = color
+        ? color
+        : selected.includes(spriteNum)
+        ? defaultColors["connectionSelectColor"]
+        : defaultColors["connectionStartColor"];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 3] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 2] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 1] = c[2];
 
-      c = color ? color : selected.includes(spriteNum) ? connectionSelectColor : connectionEndColor;
-      connectionMesh.geometry.attributes.color.array[conn.index*3+0] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+1] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index*3+2] = c[2];
+      c = color
+        ? color
+        : selected.includes(spriteNum)
+        ? defaultColors["connectionSelectColor"]
+        : defaultColors["connectionEndColor"];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 0] = c[0];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 1] = c[1];
+      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 2] = c[2];
     });
     connectionMesh.geometry.attributes.color.needsUpdate = true;
-  }
+  };
 
   /**
    * Updates the camera projection matrix, and renderer size to the current
    * window size.
    */
-  function onWindowResize() {
+  const onWindowResize = () => {
     camera.aspect = container.offsetWidth / container.offsetHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize( container.offsetWidth, container.offsetHeight );
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
     if (cameraControls) {
       cameraControls.handleResize();
     }
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Sets the camera to the absolute position given by `position`, using the
@@ -811,17 +826,17 @@ function MetAtlasViewer(targetElement) {
    * @param {*} up - new camera up vector
    * @param {*} target - new camera target
    */
-  function setCamera(position, up, target) {
+  const setCamera = (position, up, target) => {
     camera.position.copy(position);
     if (up) {
       camera.up.copy(up);
     }
 
     if (target) {
-      cameraControls.target.copy(target)
+      cameraControls.target.copy(target);
     }
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Sets the camera to fly towards being in the position given by `position`,
@@ -832,7 +847,11 @@ function MetAtlasViewer(targetElement) {
    * @param {*} up - target camera up vector
    * @param {*} target - target camera target
    */
-  function setFlyTarget(position, up = {x:0, y:1, z:0}, target = {x:0, y:0, z:0}) {
+  const setFlyTarget = (
+    position,
+    up = { x: 0, y: 1, z: 0 },
+    target = { x: 0, y: 0, z: 0 }
+  ) => {
     flyTarget.active = true;
     flyTarget.start = Object.assign({}, camera.position);
     flyTarget.startUp = Object.assign({}, camera.up);
@@ -840,7 +859,7 @@ function MetAtlasViewer(targetElement) {
     flyTarget.target = target;
     flyTarget.targetUp = up;
     flyTarget.startTime = new Date().getTime();
-  }
+  };
 
   /**
    * Updates the camera with a new position given the time that's transpired
@@ -849,70 +868,82 @@ function MetAtlasViewer(targetElement) {
    * the `flyTarget.end` position, and `flyTarget.active` will be set to
    * `false`.
    */
-  function flyUpdate() {
+  const flyUpdate = () => {
     let t = new Date().getTime();
     if (t >= flyTarget.startTime + flyTarget.runTime) {
       flyTarget.active = false;
       setCamera(flyTarget.end, flyTarget.targetUp, flyTarget.target);
     } else {
-      let p = (t - flyTarget.startTime)/flyTarget.runTime;
+      let p = (t - flyTarget.startTime) / flyTarget.runTime;
       let p_t = {
-        x: flyTarget.start.x + (flyTarget.end.x - flyTarget.start.x)*p,
-        y: flyTarget.start.y + (flyTarget.end.y - flyTarget.start.y)*p,
-        z: flyTarget.start.z + (flyTarget.end.z - flyTarget.start.z)*p
+        x: flyTarget.start.x + (flyTarget.end.x - flyTarget.start.x) * p,
+        y: flyTarget.start.y + (flyTarget.end.y - flyTarget.start.y) * p,
+        z: flyTarget.start.z + (flyTarget.end.z - flyTarget.start.z) * p,
       };
       let p_u = {
-        x: flyTarget.startUp.x + (flyTarget.targetUp.x - flyTarget.startUp.x)*p,
-        y: flyTarget.startUp.y + (flyTarget.targetUp.y - flyTarget.startUp.y)*p,
-        z: flyTarget.startUp.z + (flyTarget.targetUp.z - flyTarget.startUp.z)*p
+        x:
+          flyTarget.startUp.x +
+          (flyTarget.targetUp.x - flyTarget.startUp.x) * p,
+        y:
+          flyTarget.startUp.y +
+          (flyTarget.targetUp.y - flyTarget.startUp.y) * p,
+        z:
+          flyTarget.startUp.z +
+          (flyTarget.targetUp.z - flyTarget.startUp.z) * p,
       };
       setCamera(p_t, p_u, flyTarget.target);
     }
-  }
+  };
 
   /**
    * Uses the SetFlyTarget function to reset the camera to the start-position.
    */
-  function resetCamera() {
-    setFlyTarget(cameraDefault.position, cameraDefault.up, cameraDefault.target);
-  }
+  const resetCamera = () => {
+    setFlyTarget(
+      cameraDefault.position,
+      cameraDefault.up,
+      cameraDefault.target
+    );
+  };
 
   /**
    * Resets the list of selected nodes, and re-points the camera to the world
    * center.
    */
-  function resetSelection() {
+  const resetSelection = () => {
     select([]);
-    cameraControls.target.copy({x:0, y:0, z:0});
+    cameraControls.target.copy({ x: 0, y: 0, z: 0 });
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Toggles showing node labels;
    */
-  function toggleLabels() {
+  const toggleLabels = () => {
     if (showLabels) {
       clearLabels();
     }
     showLabels = !showLabels;
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Toggles showing nodes and links for a node type;
    */
-  async function toggleNodeType(nodeType) {
+  const toggleNodeType = async (nodeType) => {
     showGenes = !showGenes;
 
     if (showGenes) {
       return await setData(initialData);
     } else {
-      const nodes = initialData.graphData.nodes.filter(n => n.g !== nodeType);
-      const nodeIds = nodes.map(n => n.id);
-      const links = initialData.graphData.links.filter(l =>
-        nodeIds.includes(l.s) && nodeIds.includes(l.t)
+      const nodes = initialData.graphData.nodes.filter((n) => n.g !== nodeType);
+      const nodeIds = nodes.map((n) => n.id);
+      const links = initialData.graphData.links.filter(
+        (l) => nodeIds.includes(l.s) && nodeIds.includes(l.t)
       );
-      const nodeTextures = initialData.nodeTextures.filter(t => t.group !== nodeType);
+      const nodeTextures = initialData.nodeTextures.filter(
+        (t) => t.group !== nodeType
+      );
 
       const filteredData = {
         ...initialData,
@@ -924,22 +955,22 @@ function MetAtlasViewer(targetElement) {
       };
       return await setData(filteredData);
     }
-  }
+  };
 
   /**
    * Sets the distance to show node labels.
    *
    * @param {number} newDistance The new label rendering distance
    */
-  function setLabelDistance(newDistance) {
-    labelDistance = newDistance
+  const setLabelDistance = (newDistance) => {
+    labelDistance = newDistance;
     animationId = requestAnimationFrame(render);
-  }
+  };
 
   /**
    * Returns a list of all nodes within the given `distance` from the camera.
    */
-  function getNodesWithin(distance) {
+  const getNodesWithin = (distance) => {
     let nodes = [];
 
     let testCamera = new PerspectiveCamera(fieldOfView, aspect, near, distance);
@@ -957,60 +988,60 @@ function MetAtlasViewer(targetElement) {
         testCamera.matrixWorldInverse
       )
     );
-    nodeInfo.forEach((node,i) => {
-      let p = {x: node.pos[0], y: node.pos[1], z: node.pos[2]};
+    nodeInfo.forEach((node, i) => {
+      let p = { x: node.pos[0], y: node.pos[1], z: node.pos[2] };
       if (frustum.containsPoint(p)) {
-        nodes.push(i)
+        nodes.push(i);
       }
     });
 
     return nodes;
-  }
+  };
 
   /**
    * Removes all labels from the scene
    */
-  function clearLabels() {
-    while(labels.children.length > 0) {
+  const clearLabels = () => {
+    while (labels.children.length > 0) {
       labels.remove(labels.children[0]);
     }
-  }
+  };
 
   /**
    * Adds a node label back into the scene.
    *
    * @param {number} node node index of the node to label
    */
-  function labelNode(node) {
-    labels.add( nodeInfo[node].label );
-  }
+  const labelNode = (node) => {
+    labels.add(nodeInfo[node].label);
+  };
 
   /**
    * Rendering function.
    */
-  function render() {
-    if (!renderer) {
+  const render = () => {
+    if (!renderer || !cameraControls) {
       return;
     }
 
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.render( scene, camera );
+    renderer.render(scene, camera);
     if (showLabels) {
       let nodes = getNodesWithin(labelDistance);
       clearLabels();
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         labelNode(node);
       });
-      labelRenderer.setSize( container.offsetWidth, container.offsetHeight );
-      labelRenderer.render( scene, camera );
+      labelRenderer.setSize(container.offsetWidth, container.offsetHeight);
+      labelRenderer.render(scene, camera);
     }
-  }
+  };
 
   /**
    * Starts the animation cycle by repeatedly requesting an animation frame and
    * calling 'render()'.
    */
-  function animate() {
+  const animate = () => {
     animationId = requestAnimationFrame(animate);
     if (flyTarget.active) {
       flyUpdate();
@@ -1020,7 +1051,7 @@ function MetAtlasViewer(targetElement) {
     } else {
       render();
     }
-  }
+  };
 
   // Start the rendering cycle
   animate();
@@ -1029,60 +1060,59 @@ function MetAtlasViewer(targetElement) {
    * Bind callback for when a single node is clicked,
    * used in the onMouseClick function.
    */
-  function setNodeSelectCallback(callback) {
+  const setNodeSelectCallback = (callback) => {
     nodeSelectCallback = callback;
-  }
+  };
 
   /**
    * Bind callback for when the camera is updated.
    */
-  function setUpdateCameraCallback(callback) {
+  const setUpdateCameraCallback = (callback) => {
     updateCameraCallback = callback;
-  }
+  };
 
   /**
    * Centers camera on a node
    */
-  function centerNode(node) {
+  const centerNode = (node) => {
     let m = midPoint([node.index]);
     cameraControls.target.copy(m);
-  }
-
+  };
 
   /**
    * Set background color
    */
-  function setBackgroundColor(color) {
+  const setBackgroundColor = (color) => {
     scene.background = new Color(color);
-  }
+  };
 
   /**
    * Disposes the viewer
    */
-  function dispose() {
+  const dispose = () => {
     // stop animation
     cancelAnimationFrame(animationId);
 
     // remove event listeners
-    renderer.domElement.addEventListener('dblclick', null, false);
-    window.removeEventListener('resize', onWindowResize, false);
-    window.removeEventListener('mousemove', onMouseMove, false);
-    window.removeEventListener('pointerdown', onMouseClick, false);
-    window.removeEventListener('keypress', onKeypress, false);
+    renderer.domElement.addEventListener("dblclick", null, false);
+    window.removeEventListener("resize", onWindowResize, false);
+    window.removeEventListener("mousemove", onMouseMove, false);
+    window.removeEventListener("pointerdown", onMouseClick, false);
+    window.removeEventListener("keypress", onKeypress, false);
 
     // dispose objects
-    renderer.dispose()
-    scene.traverse(object => {
-    	if (!object.isMesh) return
-    	object.geometry.dispose()
-    
-    	if (object.material.isMaterial) {
-    		cleanMaterial(object.material)
-    	} else {
-    		for (const material of object.material) cleanMaterial(material)
-    	}
-    })
-    
+    renderer.dispose();
+    scene.traverse((object) => {
+      if (!object.isMesh) return;
+      object.geometry.dispose();
+
+      if (object.material.isMaterial) {
+        cleanMaterial(object.material);
+      } else {
+        for (const material of object.material) cleanMaterial(material);
+      }
+    });
+
     // clear variables
     renderer = null;
     labelRenderer = null;
@@ -1092,34 +1122,45 @@ function MetAtlasViewer(targetElement) {
 
     // remove elements
     while (container.lastChild) container.removeChild(container.lastChild);
-  }
+  };
 
-  const cleanMaterial = material => {
-  	material.dispose()
-  
-  	// dispose textures
-  	for (const key of Object.keys(material)) {
-  		const value = material[key]
-  		if (value && typeof value === 'object' && 'minFilter' in value) {
-  			value.dispose()
-  		}
-  	}
-  }
+  const cleanMaterial = (material) => {
+    material.dispose();
+
+    // dispose textures
+    for (const key of Object.keys(material)) {
+      const value = material[key];
+      if (value && typeof value === "object" && "minFilter" in value) {
+        value.dispose();
+      }
+    }
+  };
+
+  // Add window resize listener and mouse listener
+  window.addEventListener("resize", onWindowResize, false);
+  window.addEventListener("mousemove", onMouseMove, false);
+  window.addEventListener("pointerdown", onMouseClick, false);
+  window.addEventListener("keypress", onKeypress, false);
+
+  // Set default controls
+  setCameraControls(AtlasViewerControls);
 
   // Return a "controller" that we can use to interact with the scene.
-  return {centerNode,
-          dispose,
-          setBackgroundColor,
-          selectBy,
-          setCameraControls,
-          setColors,
-          setData,
-          setCamera,
-          setNodeSelectCallback,
-          setUpdateCameraCallback,
-          setLabelDistance,
-          toggleLabels,
-          toggleNodeType};
-}
+  return {
+    centerNode,
+    dispose,
+    setBackgroundColor,
+    selectBy,
+    setCameraControls,
+    setColors,
+    setData,
+    setCamera,
+    setNodeSelectCallback,
+    setUpdateCameraCallback,
+    setLabelDistance,
+    toggleLabels,
+    toggleNodeType,
+  };
+};
 
 export { MetAtlasViewer };
