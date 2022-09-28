@@ -140,6 +140,24 @@ const createFrustum = (camera) => {
   return frustum;
 };
 
+/*
+ * Move camera to a new position.
+ * The position should be of the shape:
+ * {x: <x-pos>, y: <y-pos>, z: <z-pos>}
+ *
+ * ...
+ * @param {object} camera - a PerspectiveCamera instance
+ * @param {object} position - the new position of the camera
+ */
+const moveCamera = (camera, position) => {
+  camera.position.copy(position);
+  camera.up.copy({ x: 0, y: 1, z: 0 });
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrix();
+  camera.updateMatrixWorld();
+  camera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
+};
+
 const defaultColors = {
   nodeDefaultColor: [255, 255, 255],
   connectionStartColor: [0, 127, 255],
@@ -157,6 +175,7 @@ export {
   createLabelRenderer,
   createPointsMaterial,
   createFrustum,
+  moveCamera,
   lineMaterial,
   defaultColors,
 };

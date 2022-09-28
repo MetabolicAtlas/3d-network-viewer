@@ -28,6 +28,7 @@ import {
   createLabelRenderer,
   createPointsMaterial,
   createFrustum,
+  moveCamera,
   lineMaterial,
   defaultColors,
 } from "./helpers";
@@ -105,7 +106,10 @@ const MetAtlasViewer = (targetElement) => {
   container.appendChild(renderer.domElement);
 
   // Add a label-renderer for node labels
-  let labelRenderer = createLabelRenderer(container.offsetWidth, container.offsetHeight);
+  let labelRenderer = createLabelRenderer(
+    container.offsetWidth,
+    container.offsetHeight
+  );
   container.appendChild(labelRenderer.domElement);
 
   const labels = new Group();
@@ -446,12 +450,7 @@ const MetAtlasViewer = (targetElement) => {
           near,
           far
         );
-        testCamera.position.copy(t);
-        testCamera.up.copy({ x: 0, y: 1, z: 0 });
-        testCamera.lookAt(0, 0, 0);
-        testCamera.updateMatrix();
-        testCamera.updateMatrixWorld();
-        testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
+        moveCamera(testCamera, t);
 
         while (!isInCamera(items, testCamera) && cameraDistance < maxDistance) {
           // move camera back until we've reached the max distance or we can see
@@ -462,12 +461,7 @@ const MetAtlasViewer = (targetElement) => {
             y: p.y + (p.y / l) * cameraDistance,
             z: p.z + (p.z / l) * cameraDistance,
           };
-          testCamera.position.copy(t);
-          testCamera.up.copy({ x: 0, y: 1, z: 0 });
-          testCamera.lookAt(0, 0, 0);
-          testCamera.updateMatrix();
-          testCamera.updateMatrixWorld();
-          testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
+          moveCamera(testCamera, t);
         }
       }
       setFlyTarget(t);
@@ -689,13 +683,13 @@ const MetAtlasViewer = (targetElement) => {
   };
 
   /**
-   * Sets the camera control function, and adds an event listener which calls
+   * Sets the camera control class, and adds an event listener which calls
    * the render function whenever the controls emit a change event.
    *
-   * @param {function} cameraControlFunction
+   * @param {function} cameraControlClass
    */
-  const setCameraControls = (cameraControlFunction) => {
-    cameraControls = new cameraControlFunction(camera, renderer.domElement);
+  const setCameraControls = (cameraControlClass) => {
+    cameraControls = new cameraControlClass(camera, renderer.domElement);
     cameraControls.addEventListener("change", render);
     cameraControls.addEventListener("end", handleUpdateCamera);
     return cameraControls;
@@ -778,9 +772,12 @@ const MetAtlasViewer = (targetElement) => {
    * window size.
    */
   const onWindowResize = () => {
-    camera.aspect = container.offsetWidth / container.offsetHeight;
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setSize(width, height);
     if (cameraControls) {
       cameraControls.handleResize();
     }
