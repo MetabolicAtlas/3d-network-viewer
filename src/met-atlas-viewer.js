@@ -8,14 +8,11 @@ import {
   BufferGeometry,
   Color,
   Float32BufferAttribute,
-  Frustum,
   Group,
   LineSegments,
-  Matrix4,
   NearestFilter,
   PerspectiveCamera,
   Points,
-  PointsMaterial,
   Scene,
   TextureLoader,
   Uint8BufferAttribute,
@@ -23,13 +20,14 @@ import {
   WebGLRenderTarget,
 } from "three";
 
-import { CSS2DRenderer } from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
-
 import { AtlasViewerControls } from "./atlas-viewer-controls";
 import {
   makeIndexSprite,
   createInfoBox,
   createLabel,
+  createLabelRenderer,
+  createPointsMaterial,
+  createFrustum,
   lineMaterial,
   defaultColors,
 } from "./helpers";
@@ -107,11 +105,7 @@ const MetAtlasViewer = (targetElement) => {
   container.appendChild(renderer.domElement);
 
   // Add a label-renderer for node labels
-  let labelRenderer = new CSS2DRenderer();
-  labelRenderer.setSize(container.offsetWidth, container.offsetHeight);
-  labelRenderer.domElement.style.position = "absolute";
-  labelRenderer.domElement.style.top = "0";
-  labelRenderer.domElement.style.pointerEvents = "none";
+  let labelRenderer = createLabelRenderer(container.offsetWidth, container.offsetHeight);
   container.appendChild(labelRenderer.domElement);
 
   const labels = new Group();
@@ -328,32 +322,13 @@ const MetAtlasViewer = (targetElement) => {
       promises.push(
         new Promise((resolve) => {
           const sprite = textureLoader.load(tex.sprite, () => {
-            nodeMaterials.push(
-              new PointsMaterial({
-                size: nodeSize,
-                vertexColors: true,
-                map: sprite,
-                transparent: true,
-                depthTest: true,
-                alphaTest: 0.5,
-              })
-            );
+            nodeMaterials.push(createPointsMaterial(nodeSize, sprite));
 
             const indexSprite = textureLoader.load(makeIndexSprite(sprite));
             indexSprite.magFilter = NearestFilter;
             indexSprite.minFilter = NearestFilter;
 
-            indexMaterials.push(
-              new PointsMaterial({
-                size: nodeSize,
-                vertexColors: true,
-                map: indexSprite,
-                transparent: true,
-                depthTest: true,
-                flatShading: true,
-                alphaTest: 0.5,
-              })
-            );
+            indexMaterials.push(createPointsMaterial(nodeSize, indexSprite));
             resolve("texture loaded");
           });
         })
@@ -529,13 +504,7 @@ const MetAtlasViewer = (targetElement) => {
    */
   const isInCamera = (items, cam) => {
     let retval = true;
-    let frustum = new Frustum();
-    frustum.setFromProjectionMatrix(
-      new Matrix4().multiplyMatrices(
-        cam.projectionMatrix,
-        cam.matrixWorldInverse
-      )
-    );
+    const frustum = createFrustum(cam);
     items
       .map((i) => nodeInfo[i])
       .forEach((node) => {
@@ -981,13 +950,7 @@ const MetAtlasViewer = (targetElement) => {
     testCamera.updateMatrixWorld();
     testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
 
-    let frustum = new Frustum();
-    frustum.setFromProjectionMatrix(
-      new Matrix4().multiplyMatrices(
-        testCamera.projectionMatrix,
-        testCamera.matrixWorldInverse
-      )
-    );
+    const frustum = createFrustum(testCamera);
     nodeInfo.forEach((node, i) => {
       let p = { x: node.pos[0], y: node.pos[1], z: node.pos[2] };
       if (frustum.containsPoint(p)) {

@@ -1,5 +1,8 @@
-import { LineBasicMaterial } from "three";
-import { CSS2DObject } from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
+import { LineBasicMaterial, PointsMaterial, Frustum, Matrix4 } from "three";
+import {
+  CSS2DObject,
+  CSS2DRenderer,
+} from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
 
 /**
  * @file This file contains helper functions for the Metabolic Atlas 3D Viewer.
@@ -57,7 +60,7 @@ const createInfoBox = () => {
 };
 
 /*
- * create a label div for the node
+ * Create a label div for the node
  * The node should be of the shape:
  * {id: <node ID>, pos: (<x-pos>, <y-pos>, <z-pos>), g: <group>,
  * n: <node name>, (optional) color: [<r>, <g>, <b>],
@@ -79,6 +82,22 @@ const createLabel = (node) => {
   return label;
 };
 
+/*
+ * Create a label-renderer for node labels
+ *
+ * ...
+ * @param {number} width - the width of the container
+ * @param {number} height - the height of the container
+ */
+const createLabelRenderer = (width, height) => {
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(width, height);
+  labelRenderer.domElement.style.position = "absolute";
+  labelRenderer.domElement.style.top = "0";
+  labelRenderer.domElement.style.pointerEvents = "none";
+  return labelRenderer;
+};
+
 // Create the link material and geometry
 const lineMaterial = new LineBasicMaterial({
   vertexColors: true,
@@ -86,6 +105,40 @@ const lineMaterial = new LineBasicMaterial({
   depthTest: true,
   opacity: 0.67,
 });
+
+/*
+ * Create a PointsMaterial instance.
+ *
+ *  ...
+ * @param {number} size - the size of the node
+ * @param {object} map - the texture/sprite to use for the node
+ */
+const createPointsMaterial = (size, map) =>
+  new PointsMaterial({
+    size,
+    map,
+    vertexColors: true,
+    transparent: true,
+    depthTest: true,
+    alphaTest: 0.5,
+  });
+
+/*
+ * Create a Frustum instance.
+ *
+ *  ...
+ * @param {object} camera - a PerspectiveCamera instance
+ */
+const createFrustum = (camera) => {
+  const frustum = new Frustum();
+  frustum.setFromProjectionMatrix(
+    new Matrix4().multiplyMatrices(
+      camera.projectionMatrix,
+      camera.matrixWorldInverse
+    )
+  );
+  return frustum;
+};
 
 const defaultColors = {
   nodeDefaultColor: [255, 255, 255],
@@ -96,10 +149,14 @@ const defaultColors = {
   hoverSelectColor: [255, 0, 255],
   hoverConnectionColor: [255, 0, 0],
 };
+
 export {
   makeIndexSprite,
   createInfoBox,
   createLabel,
+  createLabelRenderer,
+  createPointsMaterial,
+  createFrustum,
   lineMaterial,
   defaultColors,
 };
