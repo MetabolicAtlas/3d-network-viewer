@@ -1,7 +1,6 @@
 /**
  * @file This file contains the main functions to initialize the Metabolic Atlas
  * 3D Map Viewer.
- * @author Martin Norling
  */
 
 import {

@@ -1,14 +1,12 @@
+/**
+ * @file This file contains helper functions for the Metabolic Atlas 3D Viewer.
+ */
+
 import { LineBasicMaterial, PointsMaterial, Frustum, Matrix4 } from "three";
 import {
   CSS2DObject,
   CSS2DRenderer,
 } from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
-
-/**
- * @file This file contains helper functions for the Metabolic Atlas 3D Viewer.
- * @author Martin Norling
- * @author e0
- */
 
 /**
  * Creates a blank white texture which has the approximate alpha channel of
