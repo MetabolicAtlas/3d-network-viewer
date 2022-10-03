@@ -64,7 +64,7 @@ const createInfoBox = () => {
  * The node should be of the shape:
  * {id: <node ID>, pos: (<x-pos>, <y-pos>, <z-pos>), g: <group>,
  * n: <node name>, (optional) color: [<r>, <g>, <b>],
- *  ...
+ *  ...}
  * @param {object} node - the text to display
  */
 const createLabel = (node) => {
@@ -145,17 +145,30 @@ const createFrustum = (camera) => {
  * The position should be of the shape:
  * {x: <x-pos>, y: <y-pos>, z: <z-pos>}
  *
+ * The upPosition should be of the shape:
+ * {x: <x-pos>, y: <y-pos>, z: <z-pos>}
+ *
+ * The lookAtPosition should be of the shape:
+ * {x: <x-pos>, y: <y-pos>, z: <z-pos>}
+ *
  * ...
  * @param {object} camera - a PerspectiveCamera instance
  * @param {object} position - the new position of the camera
+ * @param {object} [upPosition] - the up position of the camera
+ * @param {object} [lookAtPosition] - the lookAt position of the camera
  */
-const moveCamera = (camera, position) => {
+const moveCamera = (
+  camera,
+  position,
+  upPosition = { x: 0, y: 1, z: 0 },
+  lookAtPosition = { x: 0, y: 0, z: 0 }
+) => {
   camera.position.copy(position);
-  camera.up.copy({ x: 0, y: 1, z: 0 });
-  camera.lookAt(0, 0, 0);
+  camera.up.copy(upPosition);
+  camera.lookAt(lookAtPosition);
   camera.updateMatrix();
   camera.updateMatrixWorld();
-  camera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
+  camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 };
 
 const defaultColors = {
@@ -166,6 +179,8 @@ const defaultColors = {
   connectionSelectColor: [255, 255, 0],
   hoverSelectColor: [255, 0, 255],
   hoverConnectionColor: [255, 0, 0],
+  sceneBackgroundColor: "#000",
+  indexSceneBackgroundColor: "#fff",
 };
 
 export {

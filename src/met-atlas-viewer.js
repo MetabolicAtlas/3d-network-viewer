@@ -70,11 +70,11 @@ const MetAtlasViewer = (targetElement) => {
 
   // Create the scene and set background
   let scene = new Scene();
-  scene.background = new Color(0xdddddd);
+  scene.background = new Color(defaultColors.sceneBackgroundColor);
 
   // Create color picking scene and target
   const indexScene = new Scene();
-  indexScene.background = new Color(0xffffff);
+  indexScene.background = new Color(defaultColors.indexSceneBackgroundColor);
   const indexTarget = new WebGLRenderTarget(1, 1);
 
   // Create object group for the graph
@@ -370,6 +370,8 @@ const MetAtlasViewer = (targetElement) => {
    * - connectionSelectColor
    * - hoverSelectColor
    * - hoverConnectionColor
+   * - sceneBackgroundColor
+   * - indexSceneBackgroundColor
    */
   const setColors = (colors) => {
     const keys = Object.keys(colors);
@@ -378,6 +380,14 @@ const MetAtlasViewer = (targetElement) => {
     keys.forEach((key) => {
       if (validKeys.includes(key)) {
         defaultColors[key] = colors[key];
+
+        if (key === "sceneBackgroundColor") {
+          setBackgroundColorForScene(colors[key], scene);
+        }
+
+        if (key === "indexSceneBackgroundColor") {
+          setBackgroundColorForScene(colors[key], indexScene);
+        }
       }
     });
   };
@@ -940,12 +950,7 @@ const MetAtlasViewer = (targetElement) => {
     let nodes = [];
 
     let testCamera = new PerspectiveCamera(fieldOfView, aspect, near, distance);
-    testCamera.position.copy(camera.position);
-    testCamera.up.copy(camera.up);
-    testCamera.lookAt(cameraControls.target);
-    testCamera.updateMatrix();
-    testCamera.updateMatrixWorld();
-    testCamera.matrixWorldInverse.copy(testCamera.matrixWorld).invert();
+    moveCamera(testCamera, camera.position, camera.up, cameraControls.target);
 
     const frustum = createFrustum(testCamera);
     nodeInfo.forEach((node, i) => {
@@ -1043,7 +1048,14 @@ const MetAtlasViewer = (targetElement) => {
    * Set background color
    */
   const setBackgroundColor = (color) => {
-    scene.background = new Color(color);
+    setBackgroundColorForScene(color, scene);
+  };
+
+  /**
+   * Set background color
+   */
+  const setBackgroundColorForScene = (color, _scene = scene) => {
+    _scene.background = new Color(color);
   };
 
   /**
