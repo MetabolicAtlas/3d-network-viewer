@@ -30,6 +30,10 @@ import {
   createFrustum,
   moveCamera,
   lineMaterial,
+  getNodeColor,
+  getConnectionStartColor,
+  getConnectionEndColor,
+  updateColorInMesh,
   defaultColors,
 } from "./helpers";
 
@@ -714,14 +718,12 @@ const MetAtlasViewer = (targetElement) => {
   const setSpriteColor = (spriteNum, color = undefined) => {
     if (!nodeInfo[spriteNum]) return;
 
-    let c = color
-      ? color
-      : selected.includes(spriteNum)
-      ? defaultColors["nodeSelectColor"]
-      : nodeInfo[spriteNum].color;
-    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 0] = c[0];
-    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 1] = c[1];
-    nodeMesh.geometry.attributes.color.array[spriteNum * 3 + 2] = c[2];
+    const c = getNodeColor(
+      selected.includes(spriteNum),
+      color,
+      nodeInfo[spriteNum].color
+    );
+    updateColorInMesh(nodeMesh, spriteNum, c);
     nodeMesh.geometry.attributes.color.needsUpdate = true;
   };
 
@@ -737,42 +739,18 @@ const MetAtlasViewer = (targetElement) => {
     if (!node) return;
 
     node.connections.from.forEach((conn) => {
-      let c = color
-        ? color
-        : selected.includes(spriteNum)
-        ? defaultColors["connectionSelectColor"]
-        : defaultColors["connectionStartColor"];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 0] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 1] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 2] = c[2];
+      let c = getConnectionStartColor(selected.includes(spriteNum), color);
+      updateColorInMesh(connectionMesh, conn.index, c);
 
-      c = color
-        ? color
-        : selected.includes(spriteNum)
-        ? defaultColors["connectionSelectColor"]
-        : defaultColors["connectionEndColor"];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 3] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 4] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 5] = c[2];
+      c = getConnectionEndColor(selected.includes(spriteNum), color);
+      updateColorInMesh(connectionMesh, conn.index, c, [3, 4, 5]);
     });
     node.connections.to.forEach((conn) => {
-      let c = color
-        ? color
-        : selected.includes(spriteNum)
-        ? defaultColors["connectionSelectColor"]
-        : defaultColors["connectionStartColor"];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 3] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 2] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 - 1] = c[2];
+      let c = getConnectionStartColor(selected.includes(spriteNum), color);
+      updateColorInMesh(connectionMesh, conn.index, c, [-3, -2, -1]);
 
-      c = color
-        ? color
-        : selected.includes(spriteNum)
-        ? defaultColors["connectionSelectColor"]
-        : defaultColors["connectionEndColor"];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 0] = c[0];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 1] = c[1];
-      connectionMesh.geometry.attributes.color.array[conn.index * 3 + 2] = c[2];
+      c = getConnectionEndColor(selected.includes(spriteNum), color);
+      updateColorInMesh(connectionMesh, conn.index, c);
     });
     connectionMesh.geometry.attributes.color.needsUpdate = true;
   };

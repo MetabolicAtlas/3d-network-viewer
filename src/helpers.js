@@ -171,6 +171,73 @@ const moveCamera = (
   camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 };
 
+/*
+ * Get color.
+ *
+ * ...
+ * @param {boolean} isSelected
+ * @param {Array} color - color to set the object to
+ * @param {Array} fallbackSelectedColor - fallback selected color to set the object to
+ * @param {Array} fallbackColor - fallback color to set the object to
+ */
+const getColor = (isSelected, color, fallbackSelectedColor, fallbackColor) =>
+  color || isSelected ? fallbackSelectedColor : fallbackColor;
+
+/*
+ * Get node color.
+ *
+ * ...
+ * @param {boolean} isSelected
+ * @param {Array} color - color to set the sprite to
+ * @param {Array} fallbackColor - fallback color to set the sprite to
+ */
+const getNodeColor = (isSelected, color, fallbackColor) =>
+  getColor(isSelected, color, defaultColors["nodeSelectColor"], fallbackColor);
+
+/*
+ * Get connection start color.
+ *
+ * ...
+ * @param {boolean} isSelected
+ * @param {Array} color - color to set the connection to
+ */
+const getConnectionStartColor = (isSelected, color) =>
+  getColor(
+    isSelected,
+    color,
+    defaultColors["connectionSelectColor"],
+    defaultColors["connectionStartColor"]
+  );
+
+/*
+ * Get connection end color.
+ *
+ * ...
+ * @param {boolean} isSelected
+ * @param {Array} color - color to set the connection to
+ */
+const getConnectionEndColor = (isSelected, color) =>
+  getColor(
+    isSelected,
+    color,
+    defaultColors["connectionSelectColor"],
+    defaultColors["connectionEndColor"]
+  );
+
+/*
+ * Update color in mesh.
+ *
+ * ...
+ * @param {Array} mesh - the mesh (array of Points) to update
+ * @param {number} index - index of the object in mesh
+ * @param {Array} color - color to set the object to
+ * @param {Array} modifiers - list of modifiers for each value of color
+ */
+const updateColorInMesh = (mesh, index, color, modifiers = [0, 1, 2]) =>
+  modifiers.forEach((modifier, i) => {
+    mesh.geometry.attributes.color.array[index * 3 + modifier] = color[i];
+  });
+
 const defaultColors = {
   nodeDefaultColor: [255, 255, 255],
   connectionStartColor: [0, 127, 255],
@@ -192,5 +259,9 @@ export {
   createFrustum,
   moveCamera,
   lineMaterial,
+  getNodeColor,
+  getConnectionStartColor,
+  getConnectionEndColor,
+  updateColorInMesh,
   defaultColors,
 };
