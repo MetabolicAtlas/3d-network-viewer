@@ -47,8 +47,8 @@
     "minify": "terser public/met-atlas-viewer.js -o build/met-atlas-viewer.min.js -c -m --comments '/Version/'",
     "start": "serve public",
     "lint": "eslint src public/index.html --ext .js,.html",
-    "check-format": "prettier --check src",
-    "format": "prettier --write src"
+    "check-format": "prettier --check src public/index.html",
+    "format": "prettier --write src public/index.html"
   },
   "type": "module"
 }
