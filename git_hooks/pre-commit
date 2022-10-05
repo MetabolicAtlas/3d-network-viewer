@@ -1,0 +1,19 @@
+#!/bin/sh
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+[ -z "$FILES" ] && exit 0
+
+# Lint according to package.json and bail out if there
+# are errors. Warnings are reported, but won't stop the commit
+if ! npm run lint
+then
+	printf 'Aborted. Some files failed linting\n.' >&2
+	exit 1
+fi
+
+# Prettify all selected files
+echo "$FILES" | xargs ./node_modules/.bin/prettier --ignore-unknown --write
+
+# Add back the modified/prettified files to staging
+echo "$FILES" | xargs git add
+
+exit 0
