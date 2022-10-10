@@ -33,7 +33,7 @@
     "metabolic atlas"
   ],
   "license": "GPL-3.0-only",
-  "main": "src/main.js",
+  "main": "build/met-atlas-viewer.min.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MetabolicAtlas/3d-network-viewer.git"
