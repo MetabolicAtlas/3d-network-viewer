@@ -2,11 +2,11 @@
  * @file This file contains helper functions for the Metabolic Atlas 3D Viewer.
  */
 
-import { LineBasicMaterial, PointsMaterial, Frustum, Matrix4 } from "three";
+import { LineBasicMaterial, PointsMaterial, Frustum, Matrix4 } from 'three';
 import {
   CSS2DObject,
   CSS2DRenderer,
-} from "../node_modules/three/examples/jsm/renderers/CSS2DRenderer";
+} from '../node_modules/three/examples/jsm/renderers/CSS2DRenderer';
 
 /**
  * Creates a blank white texture which has the approximate alpha channel of
@@ -17,13 +17,13 @@ import {
  * @param {Object} baseSprite - a Three-js sprite texture.
  * @returns {string} The data url to the new sprite.
  */
-const makeIndexSprite = (baseSprite) => {
+const makeIndexSprite = baseSprite => {
   // bind sprite to a canvas so that we can interact with it
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = baseSprite.image.width;
   canvas.height = baseSprite.image.height;
 
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   ctx.drawImage(baseSprite.image, 0, 0);
 
   // create a new sprite which is pure white and have the transparency of the
@@ -45,15 +45,15 @@ const makeIndexSprite = (baseSprite) => {
 
 // Create a div to use for node mouseover information
 const createInfoBox = () => {
-  const infoBox = document.createElement("div");
-  infoBox.style.position = "fixed";
-  infoBox.style.top = "0";
-  infoBox.style.left = "0";
-  infoBox.style.visibility = "hidden";
-  infoBox.style.backgroundColor = "rgba(255,255,255,0.5)";
-  infoBox.style.padding = "10px";
-  infoBox.style.borderRadius = "5px";
-  infoBox.style.border = "1px solid rgba(0,0,0,0.6)";
+  const infoBox = document.createElement('div');
+  infoBox.style.position = 'fixed';
+  infoBox.style.top = '0';
+  infoBox.style.left = '0';
+  infoBox.style.visibility = 'hidden';
+  infoBox.style.backgroundColor = 'rgba(255,255,255,0.5)';
+  infoBox.style.padding = '10px';
+  infoBox.style.borderRadius = '5px';
+  infoBox.style.border = '1px solid rgba(0,0,0,0.6)';
   return infoBox;
 };
 
@@ -65,16 +65,16 @@ const createInfoBox = () => {
  *  ...}
  * @param {object} node - the text to display
  */
-const createLabel = (node) => {
-  let text = document.createElement("div");
-  text.className = "label";
+const createLabel = node => {
+  let text = document.createElement('div');
+  text.className = 'label';
   text.textContent = node.n;
-  text.style.fontSize = "11px";
-  text.style.fontFamily = "monospace";
-  text.style.color = "rgba(255,255,255,0.9)";
-  text.style.marginTop = "-1em";
-  text.style.padding = "5px";
-  text.style.background = "rgba(0,0,0,0.6)";
+  text.style.fontSize = '11px';
+  text.style.fontFamily = 'monospace';
+  text.style.color = 'rgba(255,255,255,0.9)';
+  text.style.marginTop = '-1em';
+  text.style.padding = '5px';
+  text.style.background = 'rgba(0,0,0,0.6)';
   const label = new CSS2DObject(text);
   label.position.copy({ x: node.pos[0], y: node.pos[1], z: node.pos[2] });
   return label;
@@ -90,9 +90,9 @@ const createLabel = (node) => {
 const createLabelRenderer = (width, height) => {
   const labelRenderer = new CSS2DRenderer();
   labelRenderer.setSize(width, height);
-  labelRenderer.domElement.style.position = "absolute";
-  labelRenderer.domElement.style.top = "0";
-  labelRenderer.domElement.style.pointerEvents = "none";
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
   return labelRenderer;
 };
 
@@ -127,7 +127,7 @@ const createPointsMaterial = (size, map) =>
  *  ...
  * @param {object} camera - a PerspectiveCamera instance
  */
-const createFrustum = (camera) => {
+const createFrustum = camera => {
   const frustum = new Frustum();
   frustum.setFromProjectionMatrix(
     new Matrix4().multiplyMatrices(
@@ -190,7 +190,7 @@ const getColor = (isSelected, color, fallbackSelectedColor, fallbackColor) =>
  * @param {Array} fallbackColor - fallback color to set the sprite to
  */
 const getNodeColor = (isSelected, color, fallbackColor) =>
-  getColor(isSelected, color, defaultColors["nodeSelectColor"], fallbackColor);
+  getColor(isSelected, color, defaultColors['nodeSelectColor'], fallbackColor);
 
 /*
  * Get connection start color.
@@ -203,8 +203,8 @@ const getConnectionStartColor = (isSelected, color) =>
   getColor(
     isSelected,
     color,
-    defaultColors["connectionSelectColor"],
-    defaultColors["connectionStartColor"]
+    defaultColors['connectionSelectColor'],
+    defaultColors['connectionStartColor']
   );
 
 /*
@@ -218,8 +218,8 @@ const getConnectionEndColor = (isSelected, color) =>
   getColor(
     isSelected,
     color,
-    defaultColors["connectionSelectColor"],
-    defaultColors["connectionEndColor"]
+    defaultColors['connectionSelectColor'],
+    defaultColors['connectionEndColor']
   );
 
 /*
@@ -244,8 +244,8 @@ const defaultColors = {
   connectionSelectColor: [255, 255, 0],
   hoverSelectColor: [255, 0, 255],
   hoverConnectionColor: [255, 0, 0],
-  sceneBackgroundColor: "#000",
-  indexSceneBackgroundColor: "#fff",
+  sceneBackgroundColor: '#000',
+  indexSceneBackgroundColor: '#fff',
 };
 
 export {

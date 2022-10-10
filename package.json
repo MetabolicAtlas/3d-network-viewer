@@ -10,12 +10,16 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "bundleDependencies": false,
+  "bundleDependencies": [],
   "deprecated": false,
   "description": "ThreeJS based graph viewer.",
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^14.1.0",
+    "eslint": "^8.24.0",
+    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "npm-run-all": "^4.1.5",
+    "prettier": "2.7.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.79.1",
     "serve": "^14.0.1",
@@ -41,7 +45,10 @@
     "dev": "npm-run-all --parallel start watch",
     "prepare": "npm run build && npm run minify",
     "minify": "terser public/met-atlas-viewer.js -o build/met-atlas-viewer.min.js -c -m --comments '/Version/'",
-    "start": "serve public"
+    "start": "serve public",
+    "lint": "eslint src public/index.html --ext .js,.html",
+    "check-format": "prettier --check src public/index.html",
+    "format": "prettier --write src public/index.html"
   },
   "type": "module"
 }

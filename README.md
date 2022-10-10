@@ -18,6 +18,14 @@ Install dependencies with `npm install`, then run `npm run dev` to start the dev
 
 The current version of the build is done with rollup, controlled by `rollup.config.js`, and will bundle the app with three-js.
 
+#### [Recommended] Setup commit hooks
+
+The project uses `eslint` and `prettier` to help catch errors and format code. Some pre-commit actions are provided along with the project that runs the linter and formatter before finalizing each commit. To setup the pre and post commit hooks, please run the following:
+
+```bash
+git config core.hooksPath git_hooks
+```
+
 #### Notes
 
 The library is automatically packaged and pushed to [npmjs.org](https://www.npmjs.com/package/@metabolicatlas/3d-network-viewer) via a GitHub Action. However, the action does not automatically bump the version, which means that occasional failures appear because of this. To bump up the version, edit the corresponding field in `package.json` (see [this commit](https://github.com/MetabolicAtlas/3d-network-viewer/commit/35f0770b9643cc4adb52bc0b5c3f572be1609203) as an example).

@@ -3,7 +3,7 @@
  * the examples/jsm/controls/TrackballControls.js file from three-js
  */
 
-import { EventDispatcher, Vector2, Vector3, Quaternion } from "three";
+import { EventDispatcher, Vector2, Vector3, Quaternion } from 'three';
 
 const STATE = {
   NONE: -1,
@@ -16,9 +16,9 @@ const STATE = {
 const EPS = 0.000001;
 
 // events
-const changeEvent = { type: "change" };
-const startEvent = { type: "start" };
-const endEvent = { type: "end" };
+const changeEvent = { type: 'change' };
+const startEvent = { type: 'start' };
+const endEvent = { type: 'end' };
 
 class AtlasViewerControls extends EventDispatcher {
   constructor(object, domElement) {
@@ -83,46 +83,46 @@ class AtlasViewerControls extends EventDispatcher {
   setupControls() {
     this.mousewheelReset();
     this.domElement.addEventListener(
-      "contextmenu",
+      'contextmenu',
       this.contextmenu.bind(this),
       false
     );
     this.domElement.addEventListener(
-      "mousedown",
+      'mousedown',
       this.mousedown.bind(this),
       false
     );
     this.domElement.addEventListener(
-      "mousemove",
+      'mousemove',
       this.mousemove.bind(this),
       false
     );
-    this.domElement.addEventListener("mouseup", this.mouseup.bind(this), false);
+    this.domElement.addEventListener('mouseup', this.mouseup.bind(this), false);
 
     this.domElement.addEventListener(
-      "wheel",
+      'wheel',
       this.mousewheel.bind(this),
       false
     );
 
     this.domElement.addEventListener(
-      "touchstart",
+      'touchstart',
       this.touchstart.bind(this),
       false
     );
     this.domElement.addEventListener(
-      "touchend",
+      'touchend',
       this.touchend.bind(this),
       false
     );
     this.domElement.addEventListener(
-      "touchmove",
+      'touchmove',
       this.touchmove.bind(this),
       false
     );
 
-    window.addEventListener("keydown", this.keydown.bind(this), false);
-    window.addEventListener("keyup", this.keyup.bind(this), false);
+    window.addEventListener('keydown', this.keydown.bind(this), false);
+    window.addEventListener('keyup', this.keyup.bind(this), false);
 
     this.handleResize();
   }
@@ -339,7 +339,7 @@ class AtlasViewerControls extends EventDispatcher {
   keydown(event) {
     if (this.enabled === false) return;
 
-    window.removeEventListener("keydown", this.keydown.bind(this));
+    window.removeEventListener('keydown', this.keydown.bind(this));
 
     this.prevState = this.state;
 
@@ -359,7 +359,7 @@ class AtlasViewerControls extends EventDispatcher {
 
     this.state = this.prevState;
 
-    window.addEventListener("keydown", this.keydown.bind(this), false);
+    window.addEventListener('keydown', this.keydown.bind(this), false);
   }
 
   mousedown(event) {
@@ -569,42 +569,42 @@ class AtlasViewerControls extends EventDispatcher {
 
   dispose() {
     this.domElement.removeEventListener(
-      "contextmenu",
+      'contextmenu',
       this.contextmenu.bind(this),
       false
     );
     this.domElement.removeEventListener(
-      "mousedown",
+      'mousedown',
       this.mousedown.bind(this),
       false
     );
     this.domElement.removeEventListener(
-      "wheel",
+      'wheel',
       this.mousewheel.bind(this),
       false
     );
 
     this.domElement.removeEventListener(
-      "touchstart",
+      'touchstart',
       this.touchstart.bind(this),
       false
     );
     this.domElement.removeEventListener(
-      "touchend",
+      'touchend',
       this.touchend.bind(this),
       false
     );
     this.domElement.removeEventListener(
-      "touchmove",
+      'touchmove',
       this.touchmove.bind(this),
       false
     );
 
-    document.removeEventListener("mousemove", this.mousemove.bind(this), false);
-    document.removeEventListener("mouseup", this.mouseup.bind(this), false);
+    document.removeEventListener('mousemove', this.mousemove.bind(this), false);
+    document.removeEventListener('mouseup', this.mouseup.bind(this), false);
 
-    window.removeEventListener("keydown", this.keydown.bind(this), false);
-    window.removeEventListener("keyup", this.keyup.bind(this), false);
+    window.removeEventListener('keydown', this.keydown.bind(this), false);
+    window.removeEventListener('keyup', this.keyup.bind(this), false);
   }
 }
 

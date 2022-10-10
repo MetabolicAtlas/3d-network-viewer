@@ -1,144 +1,161 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-    <head lang='en'>
-        <meta charset="utf8">
-        <meta name='viewport' content='width=device-width'>
-        <link rel="icon" type="image/png" href="favicon.png">
-        <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
-        <script src="met-atlas-viewer.js"></script>
-        <script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
-        <style>
-            html, body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
+  <head lang="en">
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
+    <script src="met-atlas-viewer.js"></script>
+    <script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .title {
+        position: fixed;
+        top: 0;
+        left: 85px;
+        font-family: 'Courier New', Courier, monospace;
+      }
+      .atlas-viewer {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewer" class="atlas-viewer"></div>
+    <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
+    <script>
+      const { MetAtlasViewer, Stats } = window;
+
+      const controller = MetAtlasViewer.MetAtlasViewer('viewer');
+      const makeData = (numberOfNodes = 100, radius = 2000, nice = true) => {
+        const randomInSphere = radius => {
+          let z = 2 * Math.random() - 1;
+          const theta = 2 * Math.PI * Math.random();
+          const R = 1 - 1 / Math.exp(5 * Math.random());
+          const x = R * (Math.sqrt(1 - z * z) * Math.cos(theta)) * radius;
+          const y = R * (Math.sqrt(1 - z * z) * Math.sin(theta)) * radius;
+          z = R * z * radius;
+          return [x, y, z];
+        };
+        let start = Date.now();
+        const data = { nodes: [], links: [] };
+        for (let i = 0; i < numberOfNodes; i++) {
+          const pos = randomInSphere(radius);
+          const color = [
+            Math.floor((255 * (pos[0] - radius)) / (2 * radius)),
+            Math.floor((255 * (pos[1] - radius)) / (2 * radius)),
+            Math.floor((255 * (pos[2] - radius)) / (2 * radius)),
+          ];
+          data.nodes.push({
+            id: i,
+            pos: pos,
+            color: color,
+            n: Math.random().toString(36).substring(7),
+            g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)],
+          });
+          if (i > 0) {
+            if (!nice) {
+              data.links.push({ s: i, t: Math.floor(Math.random() * i) });
+              continue;
             }
-            .title {
-                position: fixed;
-                top: 0;
-                left: 85px;
-                font-family: 'Courier New', Courier, monospace;
+            let index = 0;
+            let closest = radius + 1;
+            const a = data.nodes[i];
+            for (let j = 0; j < i; j++) {
+              const b = data.nodes[j];
+              const x = Math.abs(a.pos[0] - b.pos[0]);
+              const y = Math.abs(a.pos[1] - b.pos[1]);
+              const z = Math.abs(a.pos[2] - b.pos[2]);
+              const distance = Math.sqrt(x * x + y * y + z * z);
+              if (distance < closest) {
+                closest = distance;
+                index = j;
+              }
             }
-            .atlas-viewer {
-                width: 100%;
-                height: 100%;
-                padding: 0;
-                margin: 0;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="viewer" class="atlas-viewer"></div>
-        <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
-        <script>
-            var controller = MetAtlasViewer.MetAtlasViewer("viewer");
-            function makeData(numberOfNodes = 100, radius = 2000, nice = true) {
+            data.links.push({ s: i, t: index });
+          }
+        }
+        console.log(
+          'Generated a ' +
+            (nice ? 'nice ' : '') +
+            'graph of ' +
+            numberOfNodes +
+            ' nodes in ' +
+            (new Date() - start) +
+            ' ms.'
+        );
+        return data;
+      };
 
-                function randomInSphere(radius) {
-                    var z = 2*Math.random()-1;
-                    let theta = 2 * Math.PI * Math.random();
-                    let R = 1-1/(Math.exp(5*Math.random()));
-                    let x = R*(Math.sqrt(1-z*z)*Math.cos(theta)) * radius;
-                    let y = R*(Math.sqrt(1-z*z)*Math.sin(theta)) * radius;
-                    z = R*z*radius;
-                    return [x, y, z];
-                }
-                let start = Date.now();
-                var data = {nodes:[], links: []};
-                for (var i = 0; i < numberOfNodes; i++) {
-                    let pos = randomInSphere(radius);
-                    let color = [Math.floor(255*(pos[0]-radius)/(2*radius)),
-                                 Math.floor(255*(pos[1]-radius)/(2*radius)),
-                                 Math.floor(255*(pos[2]-radius)/(2*radius)),
-                                ];
-                    data.nodes.push({id: i, pos: pos, color: color,
-                                     n: Math.random().toString(36).substring(7),
-                                     g: ['e', 'r', 'm'][Math.floor(Math.random() * 3)]})
-                    if (i > 0) {
-                        if (!nice) {
-                            data.links.push({'s':i, 't':Math.floor((Math.random() * i))});
-                            continue;
-                        }
-                        var index = 0;
-                        var closest = radius+1;
-                        let a = data.nodes[i];
-                        for (var j = 0; j < i; j++) {
-                            let b = data.nodes[j];
-                            let x = Math.abs(a.pos[0]-b.pos[0]);
-                            let y = Math.abs(a.pos[1]-b.pos[1]);
-                            let z = Math.abs(a.pos[2]-b.pos[2]);
-                            let distance = Math.sqrt( x*x + y*y + z*z );
-                            if (distance < closest) {
-                                closest = distance;
-                                index = j;
-                            }
-                        }
-                        data.links.push({'s':i, 't':index});
-                    }
-                }
-                console.log("Generated a " + (nice ? "nice " : "") + "graph of " +
-                            numberOfNodes + " nodes in " + (new Date()-start) +
-                            " ms.");
-                return data;
-            }
+      // Add stats
+      const stats = new Stats();
+      document.getElementById('viewer').appendChild(stats.domElement);
+      requestAnimationFrame(function loop() {
+        stats.update();
+        requestAnimationFrame(loop);
+      });
 
-            // Add stats
-            var stats = new Stats();
-            document.getElementById('viewer').appendChild(stats.domElement);
-            requestAnimationFrame(
-                function loop() {stats.update(); requestAnimationFrame(loop)}
-            );
+      const data = makeData(5000);
+      controller.setColors({
+        nodeSelectColor: [255, 99, 71],
+      });
+      controller.setBackgroundColor('#222');
+      controller.setNodeSelectCallback(node => {
+        console.log('node clicked');
+        console.log(node);
+        // controller.centerNode(node);
+        // controller.setCamera({ x: 100, y: 100, z: 100 });
+      });
 
-            let data = makeData(5000);
-            controller.setColors({
-                nodeSelectColor: [255, 99, 71]
-            });
-            controller.setBackgroundColor('#222');
-            controller.setNodeSelectCallback((node) => {
-                console.log('node clicked');
-                console.log(node);
-                // controller.centerNode(node);
-                // controller.setCamera({ x: 100, y: 100, z: 100 });
-            });
+      controller.setUpdateCameraCallback(position => {
+        console.log('camera position updated');
+        console.log(position);
+      });
 
-            controller.setUpdateCameraCallback((position) => {
-                console.log('camera position updated');
-                console.log(position);
-            });
+      (async () => {
+        const startTime = Date.now();
+        await controller.setData({
+          graphData: data,
+          nodeTextures: [
+            { group: 'e', sprite: 'sprite_round.png' },
+            { group: 'r', sprite: 'sprite_square.png' },
+            { group: 'm', sprite: 'sprite_triangle.png' },
+          ],
+          nodeSize: 15,
+        });
+        const finishTime = Date.now();
+        console.log(
+          `It took ${finishTime - startTime}ms to render the network.`
+        );
 
-            (async () => {
-                const startTime = Date.now();
-                await controller.setData({
-                    graphData: data,
-                    nodeTextures: [{group:'e', sprite:'sprite_round.png'},
-                                   {group:'r', sprite:'sprite_square.png'},
-                                   {group:'m', sprite:'sprite_triangle.png'}],
-                    nodeSize: 15
-                });
-                const finishTime = Date.now()
-                console.log(`It took ${finishTime - startTime}ms to render the network.`);
-                
-                // setTimeout(() => {
-                //   console.log('disposing');
-                //   controller.dispose();
-                // }, 2000);
-            })();
-            // filter selection examples: (available after the graph has
-            // initialized)
-            //
-            // controller.filterBy({group: 'm'});
-            // controller.filterBy({id: [1, 2, 3, 4]});
-            //
-            // write a reference of the controller to the log for testing:
-            console.log("controller:", controller);
+        // setTimeout(() => {
+        //   console.log('disposing');
+        //   controller.dispose();
+        // }, 2000);
+      })();
+      // filter selection examples: (available after the graph has
+      // initialized)
+      //
+      // controller.filterBy({group: 'm'});
+      // controller.filterBy({id: [1, 2, 3, 4]});
+      //
+      // write a reference of the controller to the log for testing:
+      console.log('controller:', controller);
 
-            // Subscribe to node selection events
-            document.getElementById('viewer').addEventListener('select',
-                function($event) {
-                    console.debug("selected", $event.detail);
-                });
-        </script>
-    </body>
+      // Subscribe to node selection events
+      document.getElementById('viewer').addEventListener('select', $event => {
+        console.debug('selected', $event.detail);
+      });
+    </script>
+  </body>
 </html>
