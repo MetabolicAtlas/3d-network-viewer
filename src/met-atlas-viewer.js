@@ -609,13 +609,20 @@ const MetAtlasViewer = targetElement => {
 
     if (items.length > 0) {
       select(items);
-      if (nodeSelectCallback && items.length === 1) {
-        if (event.button === 2) {
-          // right click
-          nodeSecondaryClickCallback(nodeInfo[items[0]]);
-        } else {
-          nodeSelectCallback(nodeInfo[items[0]]);
-        }
+      if (
+        nodeSelectCallback &&
+        items.length === 1 &&
+        event.button === 0 // left click
+      ) {
+        nodeSelectCallback(nodeInfo[items[0]]);
+      }
+
+      if (
+        nodeSecondaryClickCallback &&
+        items.length === 1 &&
+        event.button === 2 // right click
+      ) {
+        nodeSecondaryClickCallback(nodeInfo[items[0]]);
       }
     }
 
