@@ -53,7 +53,7 @@ const MetAtlasViewer = targetElement => {
   let far = 10000;
   let camera = new PerspectiveCamera(fieldOfView, aspect, near, far);
   camera.position.z = 3000;
-  let nodeSelectCallback, updateCameraCallback;
+  let nodeSelectCallback, nodeSecondaryClickCallback, updateCameraCallback;
 
   const cameraDefault = {
     position: Object.assign({}, camera.position),
@@ -610,7 +610,12 @@ const MetAtlasViewer = targetElement => {
     if (items.length > 0) {
       select(items);
       if (nodeSelectCallback && items.length === 1) {
-        nodeSelectCallback(nodeInfo[items[0]]);
+        if (event.button === 2) {
+          // right click
+          nodeSecondaryClickCallback(nodeInfo[items[0]]);
+        } else {
+          nodeSelectCallback(nodeInfo[items[0]]);
+        }
       }
     }
 
@@ -1007,6 +1012,15 @@ const MetAtlasViewer = targetElement => {
   };
 
   /**
+   * Bind callback for when a single node is clicked with
+   * the secondary (right) mouse button, used in the
+   * onMouseClick function.
+   */
+  const setNodeSecondaryClickCallback = callback => {
+    nodeSecondaryClickCallback = callback;
+  };
+
+  /**
    * Bind callback for when the camera is updated.
    */
   const setUpdateCameraCallback = callback => {
@@ -1105,6 +1119,7 @@ const MetAtlasViewer = targetElement => {
     setData,
     setCamera,
     setNodeSelectCallback,
+    setNodeSecondaryClickCallback,
     setUpdateCameraCallback,
     setLabelDistance,
     toggleLabels,
