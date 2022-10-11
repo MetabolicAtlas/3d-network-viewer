@@ -721,6 +721,11 @@ const MetAtlasViewer = targetElement => {
   };
 
   /**
+   * Sets the camera control options
+   * @param {object} options
+   */
+  const setCameraOptions = options => cameraControls.setOptions(options);
+  /**
    * Sets the color of 'spriteNum' in the nodeMesh to 'color'.
    *
    * @param {number} spriteNum - id of the sprite in the nodemesh
@@ -1122,6 +1127,7 @@ const MetAtlasViewer = targetElement => {
     setBackgroundColor,
     selectBy,
     setCameraControls,
+    setCameraOptions,
     setColors,
     setData,
     setCamera,

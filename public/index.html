@@ -126,6 +126,8 @@
         console.log(position);
       });
 
+      controller.setCameraOptions({ noRotate: true });
+
       (async () => {
         const startTime = Date.now();
         await controller.setData({
