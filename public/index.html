@@ -116,11 +116,17 @@
         // controller.centerNode(node);
         // controller.setCamera({ x: 100, y: 100, z: 100 });
       });
+      controller.setNodeSecondaryClickCallback(node => {
+        console.log('node clicked with secondary (right) mouse button');
+        console.log(node);
+      });
 
       controller.setUpdateCameraCallback(position => {
         console.log('camera position updated');
         console.log(position);
       });
+
+      controller.setCameraOptions({ noRotate: true });
 
       (async () => {
         const startTime = Date.now();

@@ -127,6 +127,11 @@ class AtlasViewerControls extends EventDispatcher {
     this.handleResize();
   }
 
+  setOptions(options) {
+    const { noRotate } = options;
+    this.noRotate = noRotate || false;
+  }
+
   handleResize() {
     if (this.domElement === document) {
       this.screen.left = 0;
@@ -370,6 +375,11 @@ class AtlasViewerControls extends EventDispatcher {
 
     if (this.state === STATE.NONE) {
       this.state = event.button;
+      if (this.state === STATE.ROTATE && this.noRotate) {
+        this.state = STATE.PAN;
+      } else {
+        this.state = event.button;
+      }
     }
 
     if (this.state === STATE.ROTATE && !this.noRotate) {
