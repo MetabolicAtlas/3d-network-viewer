@@ -19,6 +19,8 @@ import {
   WebGLRenderTarget,
 } from 'three';
 
+import html2canvas from 'html2canvas';
+
 import { AtlasViewerControls } from './atlas-viewer-controls';
 import {
   makeIndexSprite,
@@ -102,7 +104,10 @@ const MetAtlasViewer = targetElement => {
   const textureLoader = new TextureLoader();
 
   // Create renderer
-  let renderer = new WebGLRenderer();
+  let renderer = new WebGLRenderer({
+    antialias: true,
+    preserveDrawingBuffer: true,
+  });
   renderer.setSize(container.offsetWidth, container.offsetHeight);
 
   // Add the renderer to the target element
@@ -1064,15 +1069,52 @@ const MetAtlasViewer = targetElement => {
   /**
    * Export as image
    * @param {string} filename - filename
-   * @param {string} type - image type
    */
-  const exportImage = (filename, type = 'png') => {
+  const exportImage = async filename => {
+    const mime = 'image/png';
+
+    // Convert label renderer to canvas
+    const labelCanvas = await html2canvas(labelRenderer.domElement, {
+      backgroundColor: null,
+    });
+
+    // Create a new canvas to draw both the scene renderer
+    // and the label renderer
+    const combinedCanvas = document.createElement('canvas');
+    combinedCanvas.width = labelCanvas.width;
+    combinedCanvas.height = labelCanvas.height;
+
+    // Prepare the scene renderer
     renderer.render(scene, camera);
-    const dataURL = renderer.domElement.toDataURL(`image/${type}`);
-    const link = document.createElement('a');
-    link.download = `${filename}.${type}`;
-    link.href = dataURL;
-    link.click();
+    const sceneDataURL = renderer.domElement.toDataURL(mime);
+
+    // Draw the scene image
+    const sceneImage = new Image();
+    sceneImage.onload = () => {
+      const context = combinedCanvas.getContext('2d');
+      context.drawImage(sceneImage, 0, 0);
+
+      // Once the scene image is drawn, draw the label image
+      const labelDataURL = labelCanvas.toDataURL(mime);
+      const labelImage = new Image();
+      labelImage.onload = () => {
+        context.drawImage(labelImage, 0, 0);
+
+        // Once the label image is drawn,
+        // download the combined image
+        const combinedImage = new Image();
+        combinedImage.onload = () => {
+          const link = document.createElement('a');
+          link.download = `${filename}.png`;
+          link.href = combinedDataURL;
+          link.click();
+        };
+        const combinedDataURL = combinedCanvas.toDataURL(mime);
+        combinedImage.src = combinedDataURL;
+      };
+      labelImage.src = labelDataURL;
+    };
+    sceneImage.src = sceneDataURL;
   };
 
   /**
