@@ -1062,6 +1062,20 @@ const MetAtlasViewer = targetElement => {
   };
 
   /**
+   * Export as image
+   * @param {string} filename - filename
+   * @param {string} type - image type
+   */
+  const exportImage = (filename, type = 'png') => {
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL(`image/${type}`);
+    const link = document.createElement('a');
+    link.download = `${filename}.${type}`;
+    link.href = dataURL;
+    link.click();
+  };
+
+  /**
    * Disposes the viewer
    */
   const dispose = () => {
@@ -1137,6 +1151,7 @@ const MetAtlasViewer = targetElement => {
     setLabelDistance,
     toggleLabels,
     toggleNodeType,
+    exportImage,
   };
 };
 
