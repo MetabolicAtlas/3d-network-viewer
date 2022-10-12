@@ -19,7 +19,7 @@ import {
   WebGLRenderTarget,
 } from 'three';
 
-import html2canvas from 'html2canvas';
+import { toCanvas } from 'html-to-image';
 
 import { AtlasViewerControls } from './atlas-viewer-controls';
 import {
@@ -1074,9 +1074,7 @@ const MetAtlasViewer = targetElement => {
     const mime = 'image/png';
 
     // Convert label renderer to canvas
-    const labelCanvas = await html2canvas(labelRenderer.domElement, {
-      backgroundColor: null,
-    });
+    const labelCanvas = await toCanvas(labelRenderer.domElement);
 
     // Create a new canvas to draw both the scene renderer
     // and the label renderer
