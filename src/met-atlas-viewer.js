@@ -627,7 +627,7 @@ const MetAtlasViewer = targetElement => {
         items.length === 1 &&
         event.button === 2 // right click
       ) {
-        nodeSecondaryClickCallback(nodeInfo[items[0]]);
+        nodeSecondaryClickCallback(nodeInfo[items[0]], event);
       }
     }
 
