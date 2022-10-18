@@ -116,9 +116,14 @@
         // controller.centerNode(node);
         // controller.setCamera({ x: 100, y: 100, z: 100 });
       });
-      controller.setNodeSecondaryClickCallback(node => {
+      controller.setNodeSecondaryClickCallback((node, event) => {
         console.log('node clicked with secondary (right) mouse button');
         console.log(node);
+
+        const rect = event.target.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        console.log('x: ' + x + ', y: ' + y);
       });
 
       controller.setUpdateCameraCallback(position => {
