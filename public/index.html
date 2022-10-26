@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <title>Metabolic Atlas 3D Graph Viewer: Demo</title>
-    <script src="met-atlas-viewer.js"></script>
     <script src="//mrdoob.github.io/stats.js/build/stats.min.js"></script>
     <style>
       html,
@@ -33,10 +32,11 @@
   <body>
     <div id="viewer" class="atlas-viewer"></div>
     <div class="title">Metabolic Atlas 3D Map Viewer, demo.</div>
-    <script>
-      const { MetAtlasViewer, Stats } = window;
+    <script type="module">
+      import { MetAtlasViewer } from './met-atlas-viewer.js';
+      const { Stats } = window;
 
-      const controller = MetAtlasViewer.MetAtlasViewer('viewer');
+      const controller = MetAtlasViewer('viewer');
       const makeData = (numberOfNodes = 100, radius = 2000, nice = true) => {
         const randomInSphere = radius => {
           let z = 2 * Math.random() - 1;
