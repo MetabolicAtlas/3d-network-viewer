@@ -371,6 +371,7 @@ const MetAtlasViewer = targetElement => {
         setSpriteColor(index, colorData[n.id]);
       }
     });
+    animationId = requestAnimationFrame(render);
   };
 
   /**
