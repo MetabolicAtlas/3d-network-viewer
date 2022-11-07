@@ -365,7 +365,7 @@ const MetAtlasViewer = targetElement => {
     });
   };
 
-  const updateNodeColors = async colorData => {
+  const updateNodeColors = colorData => {
     nodeInfo.map((n, index) => {
       if (colorData[n.id]) {
         setSpriteColor(index, colorData[n.id]);
