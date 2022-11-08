@@ -365,6 +365,15 @@ const MetAtlasViewer = targetElement => {
     });
   };
 
+  const updateNodeColors = colorData => {
+    nodeInfo.map((n, index) => {
+      if (colorData[n.id]) {
+        setSpriteColor(index, colorData[n.id]);
+      }
+    });
+    animationId = requestAnimationFrame(render);
+  };
+
   /**
    * Sets the default colors
    *
@@ -744,6 +753,7 @@ const MetAtlasViewer = targetElement => {
       color,
       nodeInfo[spriteNum].color
     );
+
     updateColorInMesh(nodeMesh, spriteNum, c);
     nodeMesh.geometry.attributes.color.needsUpdate = true;
   };
@@ -1191,6 +1201,7 @@ const MetAtlasViewer = targetElement => {
     setLabelDistance,
     toggleLabels,
     toggleNodeType,
+    updateNodeColors,
     exportImage,
   };
 };

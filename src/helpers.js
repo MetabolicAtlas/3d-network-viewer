@@ -179,7 +179,7 @@ const moveCamera = (
  * @param {Array} fallbackColor - fallback color to set the object to
  */
 const getColor = (isSelected, color, fallbackSelectedColor, fallbackColor) =>
-  color || isSelected ? fallbackSelectedColor : fallbackColor;
+  color || (isSelected ? fallbackSelectedColor : fallbackColor);
 
 /*
  * Get node color.
