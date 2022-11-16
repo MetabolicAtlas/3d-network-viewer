@@ -81,10 +81,9 @@ const MetAtlasViewer = targetElement => {
   // Create color picking scene and target
   const indexScene = new Scene();
   indexScene.background = new Color(defaultColors.indexSceneBackgroundColor);
-  const indexTarget = new WebGLRenderTarget(1, 1);
 
-  // Create raycaster picker
-  const raycasterPicker = new RaycasterPicker();
+  // Create raycaster picker to be initiated in setData
+  let raycasterPicker;
 
   // Create object group for the graph
   let graph = new Group();
@@ -184,6 +183,9 @@ const MetAtlasViewer = targetElement => {
     nodeInfo = [];
     nodeColors = [];
     indexColors = [];
+
+    // initiate raycaster picker
+    raycasterPicker = new RaycasterPicker(nodeSize);
 
     let nodes = graphData.nodes;
     let links = graphData.links;
@@ -677,6 +679,7 @@ const MetAtlasViewer = targetElement => {
    */
   const pickInScene = event =>
     raycasterPicker.pick({
+      renderer,
       scene: indexScene,
       camera,
       event,
