@@ -16,7 +16,6 @@ import {
   TextureLoader,
   Uint8BufferAttribute,
   WebGLRenderer,
-  WebGLRenderTarget,
 } from 'three';
 
 import { toCanvas } from 'html-to-image';
