@@ -16,12 +16,12 @@ import {
   TextureLoader,
   Uint8BufferAttribute,
   WebGLRenderer,
-  WebGLRenderTarget,
 } from 'three';
 
 import { toCanvas } from 'html-to-image';
 
 import { AtlasViewerControls } from './atlas-viewer-controls';
+import { RaycasterPicker } from './raycaster-picker';
 import {
   makeIndexSprite,
   createInfoBox,
@@ -80,7 +80,9 @@ const MetAtlasViewer = targetElement => {
   // Create color picking scene and target
   const indexScene = new Scene();
   indexScene.background = new Color(defaultColors.indexSceneBackgroundColor);
-  const indexTarget = new WebGLRenderTarget(1, 1);
+
+  // Create raycaster picker to be initiated in setData
+  let raycasterPicker;
 
   // Create object group for the graph
   let graph = new Group();
@@ -183,6 +185,9 @@ const MetAtlasViewer = targetElement => {
     nodeInfo = [];
     nodeColors = [];
     indexColors = [];
+
+    // initiate raycaster picker
+    raycasterPicker = new RaycasterPicker(nodeSize);
 
     let nodes = graphData.nodes;
     let links = graphData.links;
@@ -682,46 +687,13 @@ const MetAtlasViewer = targetElement => {
    * @param {*} event - An event containing mouse coordinates.
    * @returns {number} ID number of the picked object.
    */
-  const pickInScene = event => {
-    let size = renderer.domElement.getBoundingClientRect();
-    let dpr = window.devicePixelRatio || 1;
-    const posX = event.clientX - size.x;
-    const posY = event.clientY - size.y;
-
-    // set the camera to only render the pixel under the cursor.
-    camera.setViewOffset(
-      renderer.domElement.width,
-      renderer.domElement.height,
-      posX * dpr,
-      posY * dpr,
-      1,
-      1
-    );
-
-    // change rendering target so that the image stays on the screen
-    renderer.setRenderTarget(indexTarget);
-    renderer.render(indexScene, camera);
-
-    const pixelBuffer = new Uint8Array(4);
-
-    renderer.readRenderTargetPixels(indexTarget, 0, 0, 1, 1, pixelBuffer);
-    // check if the color is white (background)
-    if (((pixelBuffer[2] == pixelBuffer[1]) == pixelBuffer[0]) == 255) {
-      return;
-    }
-    const id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | pixelBuffer[2];
-
-    // reset the camera and rendering target.
-    camera.clearViewOffset();
-    renderer.setRenderTarget(null);
-
-    // don't return background color
-    if (id == 16777215) {
-      return [];
-    }
-
-    return [id];
-  };
+  const pickInScene = event =>
+    raycasterPicker.pick({
+      renderer,
+      scene: indexScene,
+      camera,
+      event,
+    });
 
   /**
    * Run the update camera callback with the updated camera position.
