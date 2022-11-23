@@ -102,6 +102,9 @@ const MetAtlasViewer = targetElement => {
   // Create another reference to keep track of hover-selected node
   let hoverNode;
 
+  // Create a boolean to keep track of whether the cursor is within the container
+  let cursorInContainer = false;
+
   // Create a texture loader for later
   const textureLoader = new TextureLoader();
 
@@ -545,6 +548,10 @@ const MetAtlasViewer = targetElement => {
    * @param {event} event - A mouse move event
    */
   const onMouseMove = event => {
+    if (!cursorInContainer) {
+      return;
+    }
+
     const items = pickInScene(event);
     items.forEach(id => {
       infoBox.style.top = (event.clientY + 5).toString() + 'px';
@@ -624,6 +631,10 @@ const MetAtlasViewer = targetElement => {
    * @param {event} - A mouse click event.
    */
   const onMouseClick = event => {
+    if (!cursorInContainer) {
+      return;
+    }
+
     const items = pickInScene(event);
 
     if (items.length > 0) {
@@ -1106,6 +1117,8 @@ const MetAtlasViewer = targetElement => {
 
     // remove event listeners
     renderer.domElement.addEventListener('dblclick', null, false);
+    renderer.domElement.addEventListener('mouseenter', null, false);
+    renderer.domElement.addEventListener('mouseleave', null, false);
     window.removeEventListener('resize', onWindowResize, false);
     window.removeEventListener('mousemove', onMouseMove, false);
     window.removeEventListener('pointerdown', onMouseClick, false);
@@ -1152,6 +1165,18 @@ const MetAtlasViewer = targetElement => {
   window.addEventListener('mousemove', onMouseMove, false);
   window.addEventListener('pointerdown', onMouseClick, false);
   window.addEventListener('keypress', onKeypress, false);
+
+  // Add mouse enter/leave listeners to the container
+  renderer.domElement.addEventListener(
+    'mouseenter',
+    () => (cursorInContainer = true),
+    false
+  );
+  renderer.domElement.addEventListener(
+    'mouseleave',
+    () => (cursorInContainer = false),
+    false
+  );
 
   // Set default controls
   setCameraControls(AtlasViewerControls);
