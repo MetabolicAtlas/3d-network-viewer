@@ -730,7 +730,7 @@ const MetAtlasViewer = targetElement => {
    */
   const setSpriteColor = (spriteNum, color = undefined) => {
     if (!nodeInfo[spriteNum]) return;
-
+    console.log('Selected', selected);
     const c = getNodeColor(
       selected.includes(spriteNum),
       color,
