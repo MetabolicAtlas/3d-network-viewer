@@ -133,6 +133,8 @@
 
       controller.setCameraOptions({ noRotate: true });
 
+      controller.setAllowKeyboardShortcuts(true);
+
       (async () => {
         const startTime = Date.now();
         await controller.setData({
