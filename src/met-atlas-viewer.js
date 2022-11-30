@@ -56,6 +56,7 @@ const MetAtlasViewer = targetElement => {
   let camera = new PerspectiveCamera(fieldOfView, aspect, near, far);
   camera.position.z = 3000;
   let nodeSelectCallback, nodeSecondaryClickCallback, updateCameraCallback;
+  let allowKeyboardShortcuts = false;
 
   const cameraDefault = {
     position: Object.assign({}, camera.position),
@@ -669,6 +670,10 @@ const MetAtlasViewer = targetElement => {
    * @param {*} event - A keypress event
    */
   const onKeypress = event => {
+    if (!allowKeyboardShortcuts) {
+      return;
+    }
+
     if (event.key == 'r') {
       resetCamera();
     } else if (event.key == 'q') {
@@ -1060,6 +1065,13 @@ const MetAtlasViewer = targetElement => {
   };
 
   /**
+   * Set allow keyboard shortcuts
+   */
+  const setAllowKeyboardShortcuts = allow => {
+    allowKeyboardShortcuts = allow;
+  };
+
+  /**
    * Export as image
    * @param {string} filename - filename
    */
@@ -1196,6 +1208,7 @@ const MetAtlasViewer = targetElement => {
     setNodeSecondaryClickCallback,
     setUpdateCameraCallback,
     setLabelDistance,
+    setAllowKeyboardShortcuts,
     toggleLabels,
     toggleNodeType,
     updateNodeColors,
