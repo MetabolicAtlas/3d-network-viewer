@@ -40,6 +40,8 @@ class AtlasViewerControls extends EventDispatcher {
     this.noZoom = false;
     this.noPan = false;
 
+    this.allowKeyboardShortcuts = false;
+
     this.staticMoving = false;
     this.dynamicDampingFactor = 0.2;
 
@@ -130,6 +132,10 @@ class AtlasViewerControls extends EventDispatcher {
   setOptions(options) {
     const { noRotate } = options;
     this.noRotate = noRotate || false;
+  }
+
+  setAllowKeyboardShortcuts(allow) {
+    this.allowKeyboardShortcuts = allow;
   }
 
   handleResize() {
@@ -342,7 +348,7 @@ class AtlasViewerControls extends EventDispatcher {
   // listeners
 
   keydown(event) {
-    if (this.enabled === false) return;
+    if (this.enabled === false || this.allowKeyboardShortcuts === false) return;
 
     window.removeEventListener('keydown', this.keydown.bind(this));
 
@@ -360,7 +366,7 @@ class AtlasViewerControls extends EventDispatcher {
   }
 
   keyup() {
-    if (this.enabled === false) return;
+    if (this.enabled === false || this.allowKeyboardShortcuts === false) return;
 
     this.state = this.prevState;
 
