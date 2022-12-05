@@ -1069,6 +1069,7 @@ const MetAtlasViewer = targetElement => {
    */
   const setAllowKeyboardShortcuts = allow => {
     allowKeyboardShortcuts = allow;
+    cameraControls.setAllowKeyboardShortcuts(allow);
   };
 
   /**
