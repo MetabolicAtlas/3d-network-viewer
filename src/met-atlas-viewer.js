@@ -1186,6 +1186,11 @@ const MetAtlasViewer = targetElement => {
     false
   );
   renderer.domElement.addEventListener(
+    'touchstart',
+    () => (cursorInContainer = true),
+    false
+  );
+  renderer.domElement.addEventListener(
     'mouseleave',
     () => (cursorInContainer = false),
     false
